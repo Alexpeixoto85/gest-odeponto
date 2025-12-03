@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Controle de Ponto - Versão Enterprise CLT</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3a0ca3;
+            --accent-color: #7209b7;
+            --success-color: #4cc9f0;
+            --warning-color: #f8961e;
+            --danger-color: #f94144;
+            --special-color: #f72585;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --gray-color: #adb5bd;
+            --sidebar-width: 280px;
+            --header-height: 80px;
+            --border-radius: 12px;
+            --box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; }
+        
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: var(--dark-color); min-height: 100vh; padding: 20px; }
+        
+        .container { max-width: 1600px; margin: 0 auto; background-color: white; border-radius: 20px; box-shadow: 0 25px 80px rgba(0, 0, 0, 0.25); overflow: hidden; display: flex; flex-direction: column; min-height: calc(100vh - 40px); }
+        .main-content { display: flex; flex: 1; min-height: calc(100vh - var(--header-height) - 40px); }
+        
+        /* Header */
+        .app-header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 0 40px; height: var(--header-height); display: flex; justify-content: space-between; align-items: center; position: relative; overflow: hidden; }
+        .app-header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,0 L100,0 L100,100 Z" fill="rgba(255,255,255,0.1)"/></svg>'); background-size: cover; }
+        
+        .logo { display: flex; align-items: center; gap: 15px; z-index: 1; }
+        .logo-icon { background: rgba(255, 255, 255, 0.2); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        .logo-icon i { font-size: 24px; color: white; }
+        .logo-text h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+        .logo-text p { font-size: 13px; opacity: 0.9; font-weight: 300; }
+        
+        .employee-selector { z-index: 10; margin-right: 20px; }
+        .employee-selector select { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 15px; border-radius: 8px; cursor: pointer; backdrop-filter: blur(5px); }
+        .employee-selector select option { color: #333; background: white; }
+
+        .current-date { text-align: right; z-index: 1; background: rgba(255, 255, 255, 0.1); padding: 10px 20px; border-radius: var(--border-radius); backdrop-filter: blur(10px); }
+        
+        /* Sidebar */
+        .sidebar { width: var(--sidebar-width); background: linear-gradient(180deg, #2d3047 0%, #1c1e2e 100%); color: white; padding: 25px 20px; display: flex; flex-direction: column; position: relative; }
+        .sidebar::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--accent-color), var(--success-color)); }
+        
+        .user-profile { text-align: center; padding: 20px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 25px; }
+        .user-avatar { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-color), var(--accent-color)); margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 32px; border: 3px solid rgba(255, 255, 255, 0.2); }
+        .user-badge { display: inline-block; background: var(--success-color); color: white; padding: 3px 10px; border-radius: 20px; font-size: 11px; margin-top: 8px; }
+        
+        .menu { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+        .menu-item { display: flex; align-items: center; gap: 15px; padding: 16px 20px; border-radius: 12px; cursor: pointer; transition: var(--transition); font-weight: 500; color: rgba(255, 255, 255, 0.7); text-decoration: none; }
+        .menu-item:hover { background: rgba(255, 255, 255, 0.1); color: white; transform: translateX(5px); }
+        .menu-item.active { background: linear-gradient(90deg, var(--primary-color), var(--accent-color)); color: white; box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3); }
+
+        /* Content */
+        .content-area { flex: 1; padding: 30px 40px; overflow-y: auto; background: #f8fafc; }
+        .content-section { display: none; animation: fadeIn 0.5s ease-out; }
+        .content-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Components */
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #e9ecef; }
+        .section-title { display: flex; align-items: center; gap: 15px; }
+        .section-title i { background: linear-gradient(135deg, var(--primary-color), var(--accent-color)); width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; }
+        .section-title h2 { font-size: 28px; font-weight: 700; color: var(--dark-color); }
+        
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-bottom: 30px; }
+        .card { background: white; border-radius: var(--border-radius); padding: 25px; box-shadow: var(--box-shadow); transition: var(--transition); border: 1px solid #e9ecef; position: relative; overflow: hidden; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12); }
+        .card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, var(--primary-color), var(--accent-color)); }
+        
+        /* Table */
+        .table-wrapper { background: white; border-radius: var(--border-radius); overflow: hidden; box-shadow: var(--box-shadow); margin: 30px 0; overflow-x: auto; }
+        .table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+        .table thead { background: linear-gradient(90deg, var(--primary-color), var(--secondary-color)); }
+        .table th { padding: 18px 16px; text-align: left; color: white; font-weight: 600; font-size: 14px; text-transform: uppercase; }
+        .table td { padding: 16px; border-bottom: 1px solid #e9ecef; vertical-align: middle; }
+        .table tbody tr:hover { background-color: #f8f9fa; }
+        
+        .time-input { width: 100px; padding: 10px; text-align: center; border: 1px solid #dee2e6; border-radius: 6px; font-size: 14px; }
+        .time-input:focus { border-color: var(--primary-color); outline: none; box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1); }
+        
+        /* Status Badges */
+        .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+        
+        .row-domingo { background: #ffeaea !important; }
+        .row-domingo td { color: #c0392b; }
+        .row-feriado { background: #fce4ec !important; } 
+        .row-feriado td { color: #880e4f; font-weight: 600; }
+        .row-atestado { background: #e6f7ff !important; }
+        .row-atestado td { color: #1890ff; font-weight: 600; }
+
+        .saldo-positivo { color: var(--success-color); font-weight: bold; }
+        .saldo-negativo { color: var(--danger-color); font-weight: bold; }
+
+        /* Dashboard */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 25px; margin: 30px 0; }
+        .stat-card { background: white; padding: 25px; border-radius: var(--border-radius); box-shadow: var(--box-shadow); text-align: center; position: relative; }
+        .stat-value { font-size: 36px; font-weight: 700; margin: 10px 0; color: var(--dark-color); }
+        .stat-label { color: var(--gray-color); font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* Buttons & Forms */
+        .btn { padding: 12px 24px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 15px; transition: var(--transition); display: inline-flex; align-items: center; gap: 10px; color: white; }
+        .btn-primary { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); }
+        .btn-success { background: linear-gradient(135deg, var(--success-color), #2a9d8f); }
+        .btn-danger { background: linear-gradient(135deg, var(--danger-color), #d00000); }
+        .btn-warning { background: linear-gradient(135deg, var(--warning-color), #f3722c); }
+        .btn-special { background: linear-gradient(135deg, var(--special-color), #7209b7); }
+        .btn-dark { background: linear-gradient(135deg, #343a40, #212529); }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .btn-group { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 20px; }
+        
+        .form-control { width: 100%; padding: 14px 16px; border: 2px solid #e0e0e0; border-radius: 10px; margin-bottom: 15px; font-size: 14px; }
+        .form-control:focus { border-color: var(--primary-color); outline: none; }
+
+        /* Upload Zone */
+        .upload-zone { border: 2px dashed #ccc; border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.3s; background: #fafafa; }
+        .upload-zone:hover { border-color: var(--primary-color); background: #eef2ff; }
+        .upload-zone i { font-size: 40px; color: var(--gray-color); margin-bottom: 15px; }
+
+        /* Modal */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-overlay.active { display: flex; animation: fadeIn 0.3s; }
+        .modal { background: white; border-radius: 20px; width: 100%; max-width: 600px; padding: 30px; position: relative; max-height: 90vh; overflow-y: auto; }
+        .modal-close { position: absolute; top: 20px; right: 20px; font-size: 24px; cursor: pointer; background: none; border: none; }
+
+        /* Tag List for Holidays */
+        .tag-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
+        .tag { background: #f0f0f0; padding: 8px 12px; border-radius: 20px; font-size: 13px; display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; }
+        .tag i { cursor: pointer; color: var(--danger-color); }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .container { flex-direction: column; }
+            .sidebar { width: 100%; padding: 15px; }
+            .menu { flex-direction: row; flex-wrap: wrap; }
+            .menu-item { flex: 1; justify-content: center; }
+        }
+        @media (max-width: 768px) {
+            .app-header { flex-direction: column; height: auto; padding: 20px; gap: 15px; }
+            .dashboard-grid, .cards-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div style="position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;" id="toastContainer"></div>
+
+    <div class="container">
+        <header class="app-header">
+            <div class="logo">
+                <div class="logo-icon"><i class="fas fa-clock"></i></div>
+                <div class="logo-text">
+                    <h1>Ponto Enterprise</h1>
+                    <p>Gestão CLT Inteligente</p>
+                </div>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <div class="employee-selector">
+                    <select id="headerFuncionarioSelect" onchange="trocarFuncionario(this.value)">
+                    </select>
+                </div>
+                <div class="current-date">
+                    <h3 id="currentDate"></h3>
+                    <p id="currentTime"></p>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <aside class="sidebar">
+                <div class="user-profile">
+                    <div class="user-avatar"><i class="fas fa-user"></i></div>
+                    <div class="user-info">
+                        <h3 id="sidebarNome">Funcionário</h3>
+                        <p id="sidebarCargo">Cargo</p>
+                        <div class="user-badge">Ativo</div>
+                    </div>
+                </div>
+
+                <nav class="menu">
+                    <a href="#" class="menu-item active" onclick="navegar('ponto', this)"><i class="fas fa-calendar-check"></i> Registro</a>
+                    <a href="#" class="menu-item" onclick="navegar('feriados', this)"><i class="fas fa-calendar-star"></i> Dias Especiais</a>
+                    <a href="#" class="menu-item" onclick="navegar('funcionarios', this)"><i class="fas fa-users"></i> Funcionários</a>
+                    <a href="#" class="menu-item" onclick="navegar('importacao', this)"><i class="fas fa-file-excel"></i> Importar Excel</a>
+                    <a href="#" class="menu-item" onclick="navegar('relatorios', this)"><i class="fas fa-chart-pie"></i> Relatórios</a>
+                    <a href="#" class="menu-item" onclick="navegar('config', this)"><i class="fas fa-cog"></i> Configurações</a>
+                </nav>
+            </aside>
+
+            <main class="content-area">
+                
+                <section id="ponto" class="content-section active">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <i class="fas fa-calendar-alt"></i>
+                            <h2>Registro de Ponto</h2>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <select id="selectMes" class="form-control" style="width: auto; margin:0;"></select>
+                            <select id="selectAno" class="form-control" style="width: auto; margin:0;"></select>
+                            <button class="btn btn-success" onclick="salvarPontoAtual()"><i class="fas fa-save"></i> Salvar</button>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="resumoTrabalhadas" style="color: var(--primary-color)">0h</div>
+                            <div class="stat-label">Trabalhadas/Abonadas</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="resumoExtras" style="color: var(--success-color)">0h</div>
+                            <div class="stat-label">Extras (CLT)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="resumoSaldo" style="color: var(--dark-color)">0h</div>
+                            <div class="stat-label">Saldo Mensal</div>
+                        </div>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Semana</th>
+                                    <th>Entrada 1</th>
+                                    <th>Saída 1</th>
+                                    <th>Entrada 2</th>
+                                    <th>Saída 2</th>
+                                    <th>Total</th>
+                                    <th>Saldo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaPontoBody"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section id="feriados" class="content-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <i class="fas fa-calendar-star" style="background: linear-gradient(135deg, var(--special-color), #a2d2ff);"></i>
+                            <h2>Dias Especiais (Feriados e Atestados)</h2>
+                        </div>
+                    </div>
+                    <div class="card" style="margin-bottom: 30px;">
+                        <h3>Cadastrar Feriado / Folga</h3>
+                        <p style="margin-bottom: 20px; color: #666;">Os dias cadastrados aqui terão cálculo diferenciado (100% hora extra se trabalhados). Adicione apenas dias que não sejam Domingos (o sistema já identifica domingos automaticamente).</p>
+                        <div style="display: flex; gap: 15px; align-items: flex-end;">
+                            <div style="flex: 1;">
+                                <label>Data do Feriado</label>
+                                <input type="date" id="inputFeriadoData" class="form-control" style="margin-bottom: 0;">
+                            </div>
+                            <div style="flex: 2;">
+                                <label>Descrição</label>
+                                <input type="text" id="inputFeriadoDesc" class="form-control" placeholder="Ex: Natal, Ano Novo" style="margin-bottom: 0;">
+                            </div>
+                            <button class="btn btn-special" onclick="App.adicionarFeriado()"><i class="fas fa-plus"></i> Adicionar</button>
+                        </div>
+                        <div style="margin-top: 30px;">
+                            <h4>Feriados Cadastrados</h4>
+                            <div class="tag-list" id="listaFeriados"></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>Cadastrar Atestado Médico</h3>
+                        <p style="margin-bottom: 20px; color: #666;">Abonará as horas da jornada normal nos dias e período informados.</p>
+                        <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                            <div style="flex: 1 1 150px;">
+                                <label>Data de Início</label>
+                                <input type="date" id="inputAtestadoData" class="form-control" style="margin-bottom: 0;">
+                            </div>
+                            <div style="flex: 1 1 100px;">
+                                <label>Qtd. Dias</label>
+                                <input type="number" id="inputAtestadoDias" class="form-control" value="1" min="1" style="margin-bottom: 0;">
+                            </div>
+                            <div style="flex: 1 1 100px;">
+                                <label>Horas/Dia (h)</label>
+                                <input type="number" id="inputAtestadoHoras" class="form-control" value="8" min="1" max="24" style="margin-bottom: 0;">
+                            </div>
+                            <button class="btn btn-warning" onclick="App.adicionarAtestado()" style="flex: 1 1 150px;"><i class="fas fa-notes-medical"></i> Adicionar Atestado</button>
+                        </div>
+                        <div style="margin-top: 30px;">
+                            <h4>Atestados Cadastrados</h4>
+                            <div class="tag-list" id="listaAtestados"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="funcionarios" class="content-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <i class="fas fa-users-cog"></i>
+                            <h2>Gestão de Funcionários</h2>
+                        </div>
+                        <button class="btn btn-primary" onclick="abrirModalFuncionario()"><i class="fas fa-plus"></i> Novo Funcionário</button>
+                    </div>
+
+                    <div class="cards-grid" id="listaFuncionariosGrid"></div>
+                </section>
+
+                <section id="importacao" class="content-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <i class="fas fa-file-import"></i>
+                            <h2>Importação em Massa</h2>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Importar de Excel (.xlsx ou .csv)</h3>
+                        <p style="margin-bottom: 20px; color: #666;">
+                            O sistema identifica dias automaticamente. <br>
+                            <strong>Regras aplicadas:</strong><br>
+                            - Domingos/Feriados trabalhados = 100% Extra.<br>
+                            - Sábados após 13:00 = Extra.
+                        </p>
+                        
+                        <div class="upload-zone" onclick="abrirModalImportacao()">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <h4>Clique para iniciar a importação</h4>
+                            <p>Você selecionará o mês de referência antes de enviar o arquivo.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="relatorios" class="content-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <i class="fas fa-file-pdf"></i>
+                            <h2>Relatórios Profissionais</h2>
+                        </div>
+                    </div>
+
+                    <div class="cards-grid">
+                        <div class="card">
+                            <h3><i class="fas fa-print"></i> Relatório PDF Moderno</h3>
+                            <p style="margin: 10px 0;">Gera documento oficial com cálculo de saldo, assinaturas e destaque para feriados e finais de semana.</p>
+                            <button class="btn btn-danger" onclick="gerarPDFModerno()" style="width: 100%; margin-top: 15px;">
+                                <i class="fas fa-file-pdf"></i> Baixar PDF
+                            </button>
+                        </div>
+                        <div class="card">
+                            <h3><i class="fas fa-file-excel"></i> Exportar Dados</h3>
+                            <p style="margin: 10px 0;">Baixe a tabela atual em formato CSV para backup.</p>
+                            <button class="btn btn-success" onclick="exportarTabelaExcel()" style="width: 100%; margin-top: 15px;">
+                                <i class="fas fa-download"></i> Baixar Excel
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="config" class="content-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <i class="fas fa-building"></i>
+                            <h2>Configurações da Empresa</h2>
+                        </div>
+                    </div>
+                    
+                    <div class="cards-grid">
+                        <div class="card">
+                            <h3><i class="fas fa-info-circle"></i> Dados da Empresa</h3>
+                            <div class="form-group" style="margin-top: 15px;">
+                                <label>Nome da Empresa</label>
+                                <input type="text" class="form-control" id="confEmpresaNome" value="EXCELENCIA LINGERIE LTDA">
+                            </div>
+                            <div class="form-group">
+                                <label>CNPJ</label>
+                                <input type="text" class="form-control" id="confEmpresaCnpj" value="38.035.900/0007-32">
+                            </div>
+                            <div class="form-group">
+                                <label>Endereço</label>
+                                <input type="text" class="form-control" id="confEmpresaEndereco" value="PRUDENTE DE MORAIS, NATAL/RN">
+                            </div>
+                            <button class="btn btn-primary" onclick="salvarConfigEmpresa()">Salvar Dados</button>
+                        </div>
+
+                        <div class="card" style="border-top: 4px solid var(--warning-color);">
+                            <h3><i class="fas fa-tools"></i> Manutenção do Sistema</h3>
+                            <p style="margin: 10px 0; color: #666;">Ferramentas de backup e limpeza de dados.</p>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
+                                <button class="btn btn-dark" onclick="App.exportarBackup()">
+                                    <i class="fas fa-download"></i> Backup Completo (JSON)
+                                </button>
+                                
+                                <button class="btn btn-warning" onclick="document.getElementById('fileBackup').click()">
+                                    <i class="fas fa-upload"></i> Restaurar Backup
+                                </button>
+                                <input type="file" id="fileBackup" hidden accept=".json" onchange="App.restaurarBackup(this)">
+
+                                <hr style="margin: 10px 0; border: 0; border-top: 1px solid #eee;">
+                                
+                                <button class="btn btn-danger" onclick="App.limparSistema()">
+                                    <i class="fas fa-trash-alt"></i> Resetar Sistema (Apagar Tudo)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <div id="modalFuncionario" class="modal-overlay">
+        <div class="modal">
+            <button class="modal-close" onclick="fecharModalFuncionario()">&times;</button>
+            <h2 style="margin-bottom: 20px;">Cadastrar Funcionário</h2>
+            <div class="form-group">
+                <label>Nome Completo</label>
+                <input type="text" id="funcNome" class="form-control" placeholder="Ex: Maria Silva">
+            </div>
+            <div class="form-group">
+                <label>Função/Cargo</label>
+                <input type="text" id="funcCargo" class="form-control" placeholder="Ex: Vendedora">
+            </div>
+            <div class="form-group">
+                <label>Código/Matrícula</label>
+                <input type="text" id="funcCodigo" class="form-control" placeholder="Ex: 001">
+            </div>
+            <div class="form-group">
+                <label>Jornada Diária (Horas)</label>
+                <input type="number" id="funcJornada" class="form-control" value="8">
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-success" onclick="salvarFuncionarioModal()">Salvar</button>
+                <button class="btn btn-warning" onclick="fecharModalFuncionario()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalImportacao" class="modal-overlay">
+        <div class="modal">
+            <button class="modal-close" onclick="fecharModalImportacao()">&times;</button>
+            <h2 style="margin-bottom: 20px;"><i class="fas fa-file-import"></i> Configurar Importação</h2>
+            <p style="margin-bottom: 20px; color: #555;">Selecione a qual período este arquivo pertence para garantir que os dados sejam lançados corretamente.</p>
+            
+            <div class="form-group">
+                <label>Mês de Referência</label>
+                <select id="importMesRef" class="form-control"></select>
+            </div>
+            <div class="form-group">
+                <label>Ano de Referência</label>
+                <select id="importAnoRef" class="form-control"></select>
+            </div>
+
+            <div class="upload-zone" onclick="document.getElementById('fileUpload').click()" style="padding: 20px; margin-top: 20px;">
+                <i class="fas fa-file-excel" style="font-size: 24px;"></i>
+                <span id="importFileName">Clique para selecionar arquivo</span>
+                <input type="file" id="fileUpload" hidden accept=".xlsx, .xls, .csv" onchange="prepararArquivo(this)">
+            </div>
+            
+            <div class="btn-group" style="margin-top: 20px; width: 100%;">
+                <button class="btn btn-success" style="flex: 1; justify-content: center;" onclick="executarImportacao()">Processar Importação</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // ESTADO GLOBAL DO SISTEMA
+        // ==========================================
+        const App = {
+            data: {
+                empresa: {
+                    nome: "EXCELENCIA LINGERIE LTDA",
+                    cnpj: "38.035.900/0007-32",
+                    endereco: "PRUDENTE DE MORAIS, NATAL/RN"
+                },
+                funcionarios: [], 
+                registros: {},    
+                feriados: [], 
+                atestados: [],
+                config: {
+                    funcionarioAtualId: null
+                }
+            },
+            
+            ui: {
+                mesAtual: new Date().getMonth(),
+                anoAtual: new Date().getFullYear(),
+                arquivoParaImportar: null 
+            },
+
+            init: function() {
+                this.loadFromStorage();
+                
+                if (this.data.funcionarios.length === 0) {
+                    this.addFuncionario("Gislaine", "Vendedora", "008", 8);
+                }
+                
+                if (!this.data.config.funcionarioAtualId && this.data.funcionarios.length > 0) {
+                    this.data.config.funcionarioAtualId = this.data.funcionarios[0].id;
+                }
+
+                this.setupDates();
+                this.renderAll();
+                this.setupClock();
+            },
+
+            // --- Gerenciamento de Dados ---
+            saveToStorage: function() {
+                localStorage.setItem('ponto_app_data_v2', JSON.stringify(this.data));
+            },
+
+            loadFromStorage: function() {
+                const raw = localStorage.getItem('ponto_app_data_v2');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    this.data.empresa = parsed.empresa || this.data.empresa;
+                    this.data.funcionarios = parsed.funcionarios || [];
+                    this.data.registros = parsed.registros || {};
+                    this.data.feriados = parsed.feriados || [];
+                    this.data.atestados = parsed.atestados || [];
+                    this.data.config = parsed.config || {};
+                }
+            },
+
+            // --- BACKUP E RESTAURAÇÃO (NOVO) ---
+            exportarBackup: function() {
+                const dataStr = JSON.stringify(this.data, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const date = new Date().toISOString().slice(0, 10);
+                a.href = url;
+                a.download = `Backup_PontoEnterprise_${date}.json`;
+                a.click();
+                showToast('Backup gerado com sucesso!', 'success');
+            },
+
+            restaurarBackup: function(input) {
+                if (!input.files || !input.files[0]) return;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const importedData = JSON.parse(e.target.result);
+                        // Validação básica
+                        if (!importedData.funcionarios || !importedData.registros) {
+                            throw new Error("Formato de arquivo inválido");
+                        }
+                        
+                        if (confirm('Tem certeza? Isso substituirá todos os dados atuais pelos do backup.')) {
+                            this.data = importedData;
+                            this.saveToStorage();
+                            this.init(); // Reinicia UI
+                            showToast('Backup restaurado com sucesso!', 'success');
+                        }
+                    } catch (err) {
+                        showToast('Erro ao ler arquivo de backup.', 'error');
+                        console.error(err);
+                    }
+                    input.value = ''; // Limpa input
+                };
+                reader.readAsText(input.files[0]);
+            },
+
+            limparSistema: function() {
+                if (confirm('ATENÇÃO: Isso apagará TODOS os dados, funcionários e registros. Não há como desfazer.\n\nDeseja continuar?')) {
+                    if(confirm('Tem certeza absoluta?')) {
+                        localStorage.removeItem('ponto_app_data_v2');
+                        location.reload();
+                    }
+                }
+            },
+
+            addFuncionario: function(nome, cargo, codigo, jornada) {
+                const id = 'func_' + Date.now();
+                const novo = { id, nome, cargo, codigo, jornada };
+                this.data.funcionarios.push(novo);
+                this.data.config.funcionarioAtualId = id;
+                this.saveToStorage();
+                return id;
+            },
+
+            getFuncionarioAtual: function() {
+                return this.data.funcionarios.find(f => f.id === this.data.config.funcionarioAtualId) || this.data.funcionarios[0];
+            },
+
+            getKeyRegistro: function() {
+                return `${this.data.config.funcionarioAtualId}_${this.ui.anoAtual}_${this.ui.mesAtual}`;
+            },
+
+            // --- Cálculos de Tempo ---
+            timeToMin: function(timeStr) {
+                if (!timeStr) return 0;
+                const [h, m] = timeStr.split(':').map(Number);
+                return (h * 60) + m;
+            },
+
+            minToTime: function(minutes) {
+                const sign = minutes < 0 ? "-" : "";
+                const absMin = Math.abs(minutes);
+                const h = Math.floor(absMin / 60);
+                const m = absMin % 60;
+                return `${sign}${h}h ${m.toString().padStart(2, '0')}m`;
+            },
+
+            isFeriado: function(dateStr) {
+                return this.data.feriados.includes(dateStr);
+            },
+            
+            isAtestado: function(dateStr) {
+                const checkDate = new Date(dateStr + 'T00:00:00'); 
+                for(const atest of this.data.atestados) {
+                    const start = new Date(atest.dataInicio + 'T00:00:00');
+                    const end = new Date(start);
+                    end.setDate(start.getDate() + atest.dias - 1); 
+                    if (checkDate >= start && checkDate <= end) {
+                        return atest.horasPorDia * 60; 
+                    }
+                }
+                return 0; 
+            },
+
+            calcularDia: function(reg, jornadaHoras, dataObj) {
+                const y = dataObj.getFullYear();
+                const m = (dataObj.getMonth() + 1).toString().padStart(2, '0');
+                const d = dataObj.getDate().toString().padStart(2, '0');
+                const dataFormatada = `${y}-${m}-${d}`;
+                
+                const diaSemana = dataObj.getDay(); 
+                const isDomingo = diaSemana === 0;
+                const isSabado = diaSemana === 6;
+                const isFeriado = this.isFeriado(dataFormatada);
+                const minutosAbonados = this.isAtestado(dataFormatada); 
+                const isAtestadoDay = minutosAbonados > 0; 
+
+                let trabalhado = 0;
+                if (reg) {
+                    if (reg.e1 && reg.s1) trabalhado += (this.timeToMin(reg.s1) - this.timeToMin(reg.e1));
+                    if (reg.e2 && reg.s2) trabalhado += (this.timeToMin(reg.s2) - this.timeToMin(reg.e2));
+                }
+                
+                const teveBatida = trabalhado > 0;
+                let saldo = 0;
+                let jornadaEfetiva = jornadaHoras * 60;
+
+                if (isAtestadoDay) {
+                    jornadaEfetiva = minutosAbonados; 
+                    if (!teveBatida) {
+                        trabalhado = minutosAbonados; 
+                        saldo = 0; 
+                    } else {
+                        saldo = trabalhado - jornadaEfetiva;
+                    }
+                }
+                else if (isDomingo || isFeriado) {
+                    jornadaEfetiva = 0;
+                    if (teveBatida) {
+                        saldo = trabalhado; 
+                    }
+                }
+                else if (isSabado) {
+                    const jornadaSabado = 4 * 60; 
+                    if(teveBatida) {
+                        saldo = trabalhado - jornadaSabado; 
+                    }
+                }
+                else {
+                    if (teveBatida || (!isDomingo && !isSabado)) { 
+                         saldo = trabalhado - jornadaEfetiva;
+                    }
+                }
+
+                return {
+                    trabalhado: trabalhado,
+                    saldo: saldo,
+                    teveBatida: teveBatida,
+                    isSpecial: isDomingo || isFeriado,
+                    isAtestadoDay: isAtestadoDay
+                };
+            },
+
+            setupDates: function() {
+                const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+                const selMes = document.getElementById('selectMes');
+                const selAno = document.getElementById('selectAno');
+                
+                const populate = (selM, selA) => {
+                    selM.innerHTML = '';
+                    meses.forEach((m, i) => {
+                        selM.innerHTML += `<option value="${i}" ${i === this.ui.mesAtual ? 'selected' : ''}>${m}</option>`;
+                    });
+                    selA.innerHTML = '';
+                    for(let y = this.ui.anoAtual - 2; y <= this.ui.anoAtual + 2; y++) {
+                        selA.innerHTML += `<option value="${y}" ${y === this.ui.anoAtual ? 'selected' : ''}>${y}</option>`;
+                    }
+                }
+
+                populate(selMes, selAno);
+
+                selMes.onchange = (e) => { this.ui.mesAtual = parseInt(e.target.value); this.renderPonto(); };
+                selAno.onchange = (e) => { this.ui.anoAtual = parseInt(e.target.value); this.renderPonto(); };
+            },
+
+            renderAll: function() {
+                this.renderHeaderFuncionario();
+                this.renderSidebar();
+                this.renderPonto();
+                this.renderListaFuncionarios();
+                this.renderFeriados();
+                this.renderAtestados();
+                this.renderConfigEmpresa();
+            },
+
+            renderHeaderFuncionario: function() {
+                const sel = document.getElementById('headerFuncionarioSelect');
+                sel.innerHTML = '';
+                this.data.funcionarios.forEach(f => {
+                    sel.innerHTML += `<option value="${f.id}" ${f.id === this.data.config.funcionarioAtualId ? 'selected' : ''}>${f.nome}</option>`;
+                });
+            },
+
+            renderSidebar: function() {
+                const atual = this.getFuncionarioAtual();
+                if (atual) {
+                    document.getElementById('sidebarNome').textContent = atual.nome;
+                    document.getElementById('sidebarCargo').textContent = atual.cargo;
+                }
+            },
+
+            renderConfigEmpresa: function() {
+                document.getElementById('confEmpresaNome').value = this.data.empresa.nome;
+                document.getElementById('confEmpresaCnpj').value = this.data.empresa.cnpj;
+                document.getElementById('confEmpresaEndereco').value = this.data.empresa.endereco;
+            },
+
+            // --- CORREÇÃO DO BUG DO CURSOR ---
+            // Renderiza a tabela inteira (apenas ao mudar de mês ou funcionário)
+            renderPonto: function() {
+                const tbody = document.getElementById('tabelaPontoBody');
+                tbody.innerHTML = '';
+                
+                const func = this.getFuncionarioAtual();
+                const diasNoMes = new Date(this.ui.anoAtual, this.ui.mesAtual + 1, 0).getDate();
+                const key = this.getKeyRegistro();
+                const registrosMes = this.data.registros[key] || {};
+                
+                for (let d = 1; d <= diasNoMes; d++) {
+                    const dataObj = new Date(this.ui.anoAtual, this.ui.mesAtual, d);
+                    const diaSemana = dataObj.getDay(); 
+                    const isDomingo = diaSemana === 0;
+                    
+                    const y = dataObj.getFullYear();
+                    const m = (dataObj.getMonth() + 1).toString().padStart(2, '0');
+                    const dd = d.toString().padStart(2, '0');
+                    const dataFormatada = `${y}-${m}-${dd}`;
+                    const isFeriado = this.isFeriado(dataFormatada);
+
+                    const reg = registrosMes[d] || {};
+                    const calculo = this.calcularDia(reg, func.jornada, dataObj);
+                    const isAtestadoDay = calculo.isAtestadoDay;
+
+                    const diaNome = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][diaSemana];
+                    
+                    let rowClass = '';
+                    if (isDomingo) rowClass = 'row-domingo';
+                    if (isFeriado) rowClass = 'row-feriado';
+                    if (isAtestadoDay) rowClass = 'row-atestado';
+
+                    const diaExtraInfo = isFeriado ? '<i class="fas fa-star" style="font-size:10px; color:var(--special-color)"></i>' : isAtestadoDay ? '<i class="fas fa-notes-medical" style="font-size:10px; color:#1890ff"></i>' : '';
+
+                    const html = `
+                        <tr class="${rowClass}" id="row-day-${d}">
+                            <td><strong>${d.toString().padStart(2,'0')}</strong></td>
+                            <td>${diaNome} ${diaExtraInfo}</td>
+                            <td><input type="time" class="time-input" onchange="App.updatePonto(${d}, 'e1', this.value)" value="${reg.e1 || ''}"></td>
+                            <td><input type="time" class="time-input" onchange="App.updatePonto(${d}, 's1', this.value)" value="${reg.s1 || ''}"></td>
+                            <td><input type="time" class="time-input" onchange="App.updatePonto(${d}, 'e2', this.value)" value="${reg.e2 || ''}"></td>
+                            <td><input type="time" class="time-input" onchange="App.updatePonto(${d}, 's2', this.value)" value="${reg.s2 || ''}"></td>
+                            <td class="col-total">${this.minToTime(calculo.trabalhado)}</td>
+                            <td class="col-saldo ${calculo.saldo >= 0 ? 'saldo-positivo' : 'saldo-negativo'}">${this.minToTime(calculo.saldo)}</td>
+                        </tr>
+                    `;
+                    tbody.insertAdjacentHTML('beforeend', html);
+                }
+                this.updateDashboardTotals();
+            },
+
+            // Nova função para atualizar apenas os cálculos, sem redesenhar a tabela
+            updatePonto: function(dia, campo, valor) {
+                const key = this.getKeyRegistro();
+                if (!this.data.registros[key]) this.data.registros[key] = {};
+                if (!this.data.registros[key][dia]) this.data.registros[key][dia] = {};
+                
+                this.data.registros[key][dia][campo] = valor;
+                this.saveToStorage();
+                
+                // Em vez de renderPonto(), atualizamos só a linha e o dashboard
+                this.updateRowVisuals(dia);
+                this.updateDashboardTotals();
+            },
+
+            updateRowVisuals: function(dia) {
+                const row = document.getElementById(`row-day-${dia}`);
+                if(!row) return;
+
+                const func = this.getFuncionarioAtual();
+                const dataObj = new Date(this.ui.anoAtual, this.ui.mesAtual, dia);
+                const key = this.getKeyRegistro();
+                const reg = this.data.registros[key][dia] || {};
+                
+                const calculo = this.calcularDia(reg, func.jornada, dataObj);
+                
+                // Atualiza células de total e saldo
+                const colTotal = row.querySelector('.col-total');
+                const colSaldo = row.querySelector('.col-saldo');
+                
+                if(colTotal) colTotal.textContent = this.minToTime(calculo.trabalhado);
+                if(colSaldo) {
+                    colSaldo.textContent = this.minToTime(calculo.saldo);
+                    colSaldo.className = `col-saldo ${calculo.saldo >= 0 ? 'saldo-positivo' : 'saldo-negativo'}`;
+                }
+            },
+
+            updateDashboardTotals: function() {
+                const func = this.getFuncionarioAtual();
+                const diasNoMes = new Date(this.ui.anoAtual, this.ui.mesAtual + 1, 0).getDate();
+                const key = this.getKeyRegistro();
+                const registrosMes = this.data.registros[key] || {};
+                
+                let somaTrabalhada = 0;
+                let somaSaldo = 0;
+
+                for (let d = 1; d <= diasNoMes; d++) {
+                    const dataObj = new Date(this.ui.anoAtual, this.ui.mesAtual, d);
+                    const reg = registrosMes[d] || {};
+                    const calculo = this.calcularDia(reg, func.jornada, dataObj);
+
+                    const diaSemana = dataObj.getDay();
+                    const isDomingo = diaSemana === 0;
+                    const y = dataObj.getFullYear();
+                    const m = (dataObj.getMonth() + 1).toString().padStart(2, '0');
+                    const dd = d.toString().padStart(2, '0');
+                    const isFeriado = this.isFeriado(`${y}-${m}-${dd}`);
+
+                    if (calculo.teveBatida || calculo.isAtestadoDay || (!isDomingo && !isFeriado)) { 
+                         somaTrabalhada += calculo.trabalhado;
+                         somaSaldo += calculo.saldo;
+                    }
+                }
+
+                document.getElementById('resumoTrabalhadas').textContent = this.minToTime(somaTrabalhada);
+                document.getElementById('resumoExtras').textContent = somaSaldo > 0 ? this.minToTime(somaSaldo) : '0h 00m';
+                const elSaldo = document.getElementById('resumoSaldo');
+                elSaldo.textContent = this.minToTime(somaSaldo);
+                elSaldo.style.color = somaSaldo >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+            },
+            // --- FIM CORREÇÃO ---
+
+            renderFeriados: function() {
+                const list = document.getElementById('listaFeriados');
+                list.innerHTML = '';
+                this.data.feriados.sort().forEach(dateStr => {
+                    const [y, m, d] = dateStr.split('-');
+                    const display = `${d}/${m}/${y}`;
+                    list.innerHTML += `<div class="tag">${display} <i class="fas fa-times" onclick="App.removerFeriado('${dateStr}')"></i></div>`;
+                });
+            },
+
+            adicionarFeriado: function() {
+                const data = document.getElementById('inputFeriadoData').value;
+                if(!data) return showToast('Selecione uma data', 'error');
+                
+                if(!this.data.feriados.includes(data)) {
+                    this.data.feriados.push(data);
+                    this.saveToStorage();
+                    this.renderFeriados();
+                    this.renderPonto();
+                    showToast('Feriado adicionado!', 'success');
+                }
+            },
+
+            removerFeriado: function(dateStr) {
+                this.data.feriados = this.data.feriados.filter(d => d !== dateStr);
+                this.saveToStorage();
+                this.renderFeriados();
+                this.renderPonto();
+            },
+            
+            renderAtestados: function() {
+                const list = document.getElementById('listaAtestados');
+                list.innerHTML = '';
+                this.data.atestados.sort((a, b) => new Date(a.dataInicio) - new Date(b.dataInicio)).forEach(atest => {
+                    const [y, m, d] = atest.dataInicio.split('-');
+                    const display = `${d}/${m}/${y} | ${atest.dias} dias (${atest.horasPorDia}h/dia)`;
+                    list.innerHTML += `<div class="tag" style="background:#e6f7ff;">${display} <i class="fas fa-times" onclick="App.removerAtestado('${atest.dataInicio}', ${atest.dias})"></i></div>`;
+                });
+            },
+
+            adicionarAtestado: function() {
+                const dataInicio = document.getElementById('inputAtestadoData').value;
+                const dias = parseInt(document.getElementById('inputAtestadoDias').value);
+                const horasPorDia = parseInt(document.getElementById('inputAtestadoHoras').value);
+
+                if(!dataInicio || dias <= 0 || horasPorDia <= 0) return showToast('Preencha os dados do atestado corretamente', 'error');
+                
+                const novoAtestado = { dataInicio, dias, horasPorDia };
+                const isDuplicate = this.data.atestados.some(a => a.dataInicio === dataInicio && a.dias === dias);
+
+                if(!isDuplicate) {
+                    this.data.atestados.push(novoAtestado);
+                    this.saveToStorage();
+                    this.renderAtestados();
+                    this.renderPonto(); 
+                    showToast('Atestado adicionado!', 'success');
+                } else {
+                    showToast('Atestado já cadastrado para esta data/período.', 'warning');
+                }
+            },
+
+            removerAtestado: function(dataInicio, dias) {
+                this.data.atestados = this.data.atestados.filter(a => !(a.dataInicio === dataInicio && a.dias === dias));
+                this.saveToStorage();
+                this.renderAtestados();
+                this.renderPonto();
+            },
+
+            processarImportacao: function(mes, ano) {
+                const file = this.ui.arquivoParaImportar;
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const jsonData = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
+
+                        if (jsonData.length < 2) throw new Error("Arquivo inválido");
+
+                        let count = 0;
+                        const key = `${this.data.config.funcionarioAtualId}_${ano}_${mes}`;
+                        if (!this.data.registros[key]) this.data.registros[key] = {};
+
+                        const fmtTime = (val) => {
+                            if (!val) return "";
+                            if (typeof val === 'string') return val.trim().substr(0, 5);
+                            if (typeof val === 'number') {
+                                const totalMinutes = Math.round(val * 24 * 60);
+                                const h = Math.floor(totalMinutes / 60) % 24;
+                                const m = totalMinutes % 60;
+                                return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
+                            }
+                            return "";
+                        };
+
+                        for (let i = 1; i < jsonData.length; i++) {
+                            const row = jsonData[i];
+                            if (!row[0]) continue;
+
+                            let dia = null;
+                            if (typeof row[0] === 'number') {
+                                if (row[0] >= 1 && row[0] <= 31) dia = row[0];
+                                else {
+                                    const jsDate = XLSX.SSF.parse_date_code(row[0]);
+                                    if(jsDate) dia = jsDate.d;
+                                }
+                            } else if (typeof row[0] === 'string') {
+                                const parts = row[0].match(/(\d{1,2})/);
+                                if (parts) dia = parseInt(parts[0]);
+                            }
+
+                            if (dia && dia >= 1 && dia <= 31) {
+                                this.data.registros[key][dia] = {
+                                    e1: fmtTime(row[1]),
+                                    s1: fmtTime(row[2]),
+                                    e2: fmtTime(row[3]),
+                                    s2: fmtTime(row[4])
+                                };
+                                count++;
+                            }
+                        }
+
+                        this.saveToStorage();
+                        this.ui.mesAtual = parseInt(mes);
+                        this.ui.anoAtual = parseInt(ano);
+                        document.getElementById('selectMes').value = mes;
+                        document.getElementById('selectAno').value = ano;
+                        
+                        this.renderPonto();
+                        fecharModalImportacao();
+                        showToast(`${count} registros importados em ${mes+1}/${ano}!`, 'success');
+                        navegar('ponto', document.querySelector('a[onclick*="ponto"]'));
+
+                    } catch (err) {
+                        console.error(err);
+                        showToast("Erro no arquivo. Verifique o formato.", "error");
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            },
+
+            renderListaFuncionarios: function() {
+                const container = document.getElementById('listaFuncionariosGrid');
+                container.innerHTML = '';
+                this.data.funcionarios.forEach(f => {
+                    const card = `
+                        <div class="card" style="border-left: 5px solid ${f.id === this.data.config.funcionarioAtualId ? 'var(--success-color)' : 'var(--gray-color)'}">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <h3>${f.nome}</h3>
+                                ${f.id !== this.data.config.funcionarioAtualId ? `<button class="btn btn-danger" style="padding:5px 10px; font-size:12px;" onclick="App.removerFuncionario('${f.id}')"><i class="fas fa-trash"></i></button>` : '<span class="status-badge status-trabalhado">Ativo</span>'}
+                            </div>
+                            <p style="color:#666; margin-top:5px;">${f.cargo} | Matrícula: ${f.codigo}</p>
+                            <button class="btn btn-primary" style="width:100%; margin-top:15px;" onclick="trocarFuncionario('${f.id}')">Selecionar</button>
+                        </div>
+                    `;
+                    container.innerHTML += card;
+                });
+            },
+
+            removerFuncionario: function(id) {
+                if (confirm('Tem certeza? Isso apagará o cadastro.')) {
+                    this.data.funcionarios = this.data.funcionarios.filter(f => f.id !== id);
+                    this.saveToStorage();
+                    this.renderAll();
+                    showToast('Funcionário removido', 'success');
+                }
+            },
+
+            setupClock: function() {
+                setInterval(() => {
+                    const now = new Date();
+                    document.getElementById('currentDate').textContent = now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+                    document.getElementById('currentTime').textContent = now.toLocaleTimeString('pt-BR');
+                }, 1000);
+            }
+        };
+
+        // ==========================================
+        // FUNÇÕES GLOBAIS / MODALS
+        // ==========================================
+        
+        document.addEventListener('DOMContentLoaded', () => App.init());
+
+        function navegar(sectionId, element) {
+            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+            if(element) element.classList.add('active');
+        }
+
+        function showToast(msg, type = 'info') {
+            const el = document.createElement('div');
+            let color = '#4361ee';
+            if(type === 'success') color = '#4cc9f0';
+            if(type === 'error') color = '#f94144';
+            
+            el.style.cssText = `background: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); border-left: 5px solid ${color}; font-weight: 500; animation: fadeIn 0.3s;`;
+            el.innerHTML = `<i class="fas fa-info-circle"></i> ${msg}`;
+            document.getElementById('toastContainer').appendChild(el);
+            setTimeout(() => el.remove(), 4000);
+        }
+
+        function trocarFuncionario(id) {
+            App.data.config.funcionarioAtualId = id;
+            App.saveToStorage();
+            App.renderAll();
+            showToast(`Perfil alterado para ${App.getFuncionarioAtual().nome}`, 'success');
+        }
+
+        function abrirModalFuncionario() { document.getElementById('modalFuncionario').classList.add('active'); }
+        function fecharModalFuncionario() { document.getElementById('modalFuncionario').classList.remove('active'); }
+        
+        function abrirModalImportacao() { 
+            const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+            const selMes = document.getElementById('importMesRef');
+            const selAno = document.getElementById('importAnoRef');
+            
+            selMes.innerHTML = '';
+            meses.forEach((m, i) => selMes.innerHTML += `<option value="${i}" ${i === App.ui.mesAtual ? 'selected' : ''}>${m}</option>`);
+            
+            selAno.innerHTML = '';
+            for(let y = App.ui.anoAtual - 1; y <= App.ui.anoAtual + 1; y++) selAno.innerHTML += `<option value="${y}" ${y === App.ui.anoAtual ? 'selected' : ''}>${y}</option>`;
+
+            document.getElementById('modalImportacao').classList.add('active'); 
+        }
+        function fecharModalImportacao() { document.getElementById('modalImportacao').classList.remove('active'); }
+
+        function salvarFuncionarioModal() {
+            const nome = document.getElementById('funcNome').value;
+            const cargo = document.getElementById('funcCargo').value;
+            const codigo = document.getElementById('funcCodigo').value;
+            const jornada = document.getElementById('funcJornada').value;
+
+            if (!nome || !cargo) return showToast('Preencha os campos', 'error');
+
+            App.addFuncionario(nome, cargo, codigo, jornada);
+            fecharModalFuncionario();
+            App.renderAll();
+            showToast('Funcionário cadastrado!', 'success');
+        }
+
+        function salvarConfigEmpresa() {
+            App.data.empresa.nome = document.getElementById('confEmpresaNome').value;
+            App.data.empresa.cnpj = document.getElementById('confEmpresaCnpj').value;
+            App.data.empresa.endereco = document.getElementById('confEmpresaEndereco').value;
+            App.saveToStorage();
+            showToast('Dados da empresa atualizados', 'success');
+        }
+
+        function salvarPontoAtual() {
+            App.saveToStorage();
+            showToast('Dados salvos com sucesso', 'success');
+        }
+
+        function prepararArquivo(input) {
+            if(input.files && input.files[0]) {
+                App.ui.arquivoParaImportar = input.files[0];
+                document.getElementById('importFileName').textContent = input.files[0].name;
+            }
+        }
+
+        function executarImportacao() {
+            if(!App.ui.arquivoParaImportar) return showToast('Selecione um arquivo primeiro', 'error');
+            const mes = document.getElementById('importMesRef').value;
+            const ano = document.getElementById('importAnoRef').value;
+            App.processarImportacao(parseInt(mes), parseInt(ano));
+        }
+
+        function gerarPDFModerno() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const func = App.getFuncionarioAtual();
+            
+            const azulPrincipal = [67, 97, 238];
+            const cinzaEscuro = [50, 50, 50];
+
+            doc.setFillColor(...azulPrincipal);
+            doc.rect(0, 0, 210, 40, 'F');
+
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(22);
+            doc.setFont("helvetica", "bold");
+            doc.text("ESPELHO DE PONTO", 105, 18, { align: "center" });
+            
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text(`${App.data.empresa.nome} | CNPJ: ${App.data.empresa.cnpj}`, 105, 26, { align: "center" });
+            doc.text(`Período: ${document.getElementById('selectMes').options[document.getElementById('selectMes').selectedIndex].text}/${App.ui.anoAtual}`, 105, 32, { align: "center" });
+
+            doc.setFillColor(245, 247, 250);
+            doc.setDrawColor(200, 200, 200);
+            doc.roundedRect(14, 45, 182, 25, 3, 3, 'FD');
+
+            doc.setTextColor(...cinzaEscuro);
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.text("FUNCIONÁRIO:", 20, 55);
+            doc.text("CARGO:", 120, 55);
+            doc.text("MATRÍCULA:", 20, 65);
+            doc.text("JORNADA:", 120, 65);
+
+            doc.setFont("helvetica", "normal");
+            doc.text(func.nome.toUpperCase(), 50, 55);
+            doc.text(func.cargo.toUpperCase(), 140, 55);
+            doc.text(func.codigo, 50, 65);
+            doc.text(`${func.jornada} HORAS`, 140, 65);
+
+            const bodyData = [];
+            const key = App.getKeyRegistro();
+            const registrosMes = App.data.registros[key] || {};
+            const diasNoMes = new Date(App.ui.anoAtual, App.ui.mesAtual + 1, 0).getDate();
+            
+            let totalTrabalhado = 0;
+            let totalSaldo = 0;
+
+            for (let d = 1; d <= diasNoMes; d++) {
+                const dataObj = new Date(App.ui.anoAtual, App.ui.mesAtual, d);
+                const diaSemana = dataObj.getDay();
+                const diaNome = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][diaSemana];
+                const reg = registrosMes[d] || {};
+                
+                const calc = App.calcularDia(reg, func.jornada, dataObj);
+                
+                const y = dataObj.getFullYear();
+                const m = (dataObj.getMonth() + 1).toString().padStart(2, '0');
+                const dd = d.toString().padStart(2, '0');
+                const dataFormatada = `${y}-${m}-${dd}`;
+                const isFeriado = App.isFeriado(dataFormatada);
+                const isAtestadoDay = calc.isAtestadoDay;
+
+                if (calc.teveBatida || isAtestadoDay || (!isFeriado && diaSemana !== 0)) {
+                    totalTrabalhado += calc.trabalhado;
+                    totalSaldo += calc.saldo;
+                }
+
+                let textColor = [0, 0, 0];
+                let fillColor = [255, 255, 255];
+                let diaComplemento = '';
+
+                if(isFeriado || diaSemana === 0) {
+                    fillColor = [255, 234, 234];
+                    textColor = [150, 0, 0];
+                    diaComplemento = isFeriado ? ' (Fer)' : ' (Dom)';
+                }
+                
+                if (isAtestadoDay) {
+                    fillColor = [230, 247, 255];
+                    textColor = [24, 144, 255];
+                    diaComplemento = ' (Ates)';
+                }
+
+                bodyData.push([
+                    { content: `${d.toString().padStart(2,'0')}/${(App.ui.mesAtual+1).toString().padStart(2,'0')}`, styles: { fontStyle: 'bold', fillColor: fillColor } },
+                    { content: diaNome + diaComplemento, styles: { fillColor: fillColor, textColor: textColor } },
+                    reg.e1 || '-',
+                    reg.s1 || '-',
+                    reg.e2 || '-',
+                    reg.s2 || '-',
+                    App.minToTime(calc.trabalhado),
+                    { content: App.minToTime(calc.saldo), styles: { textColor: calc.saldo < 0 ? [200, 50, 50] : [0, 150, 0], fontStyle: 'bold' } }
+                ]);
+            }
+
+            doc.autoTable({
+                startY: 75,
+                head: [['Data', 'Dia', 'Ent. 1', 'Saí. 1', 'Ent. 2', 'Saí. 2', 'Total', 'Saldo']],
+                body: bodyData,
+                theme: 'grid',
+                headStyles: { fillColor: azulPrincipal, textColor: 255, fontStyle: 'bold', halign: 'center' },
+                columnStyles: {
+                    0: { halign: 'center' },
+                    1: { halign: 'center' },
+                    2: { halign: 'center' },
+                    3: { halign: 'center' },
+                    4: { halign: 'center' },
+                    5: { halign: 'center' },
+                    6: { halign: 'center', fontStyle: 'bold' },
+                    7: { halign: 'center', fontStyle: 'bold' }
+                },
+                alternateRowStyles: { fillColor: [248, 249, 252] },
+            });
+
+            let finalY = doc.lastAutoTable.finalY + 10;
+            
+            const saldoFinalEmMinutos = totalSaldo;
+            const statusSaldo = saldoFinalEmMinutos >= 0 ? 'POSITIVO (Horas Extras)' : 'NEGATIVO (Horas a Compensar)';
+            const corStatus = saldoFinalEmMinutos >= 0 ? [0, 150, 0] : [200, 50, 50];
+
+            doc.setFillColor(240, 240, 240);
+            doc.rect(14, finalY, 182, 30, 'F');
+            doc.setTextColor(...cinzaEscuro);
+            doc.setFontSize(11);
+
+            doc.setFont("helvetica", "bold");
+            doc.text("BALANÇO GERAL DO PERÍODO", 20, finalY + 8);
+            
+            doc.setFont("helvetica", "normal");
+            doc.text(`TOTAL TRABALHADO (Abonado incluído): ${App.minToTime(totalTrabalhado)}`, 20, finalY + 15);
+            
+            doc.text(`SALDO FINAL: ${App.minToTime(Math.abs(saldoFinalEmMinutos))}`, 120, finalY + 15);
+            
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(...corStatus);
+            doc.text(`STATUS: ${statusSaldo}`, 20, finalY + 23);
+            
+            doc.setTextColor(...cinzaEscuro);
+            
+            finalY += 60;
+            doc.setDrawColor(0, 0, 0);
+            
+            doc.line(20, finalY, 90, finalY);
+            doc.setFontSize(9);
+            doc.text("ASSINATURA DO EMPREGADOR", 55, finalY + 5, { align: "center" });
+            
+            doc.line(120, finalY, 190, finalY);
+            doc.text("ASSINATURA DO FUNCIONÁRIO", 155, finalY + 5, { align: "center" });
+
+            doc.setFontSize(8);
+            doc.setTextColor(150, 150, 150);
+            doc.text("Gerado por Ponto Enterprise System", 105, 290, { align: "center" });
+
+            doc.save(`Ponto_${func.nome.replace(/\s+/g, '_')}_${App.ui.mesAtual+1}_${App.ui.anoAtual}.pdf`);
+            showToast('PDF gerado com sucesso!', 'success');
+        }
+
+        function exportarTabelaExcel() {
+            const func = App.getFuncionarioAtual();
+            const key = App.getKeyRegistro();
+            const registrosMes = App.data.registros[key] || {};
+            const diasNoMes = new Date(App.ui.anoAtual, App.ui.mesAtual + 1, 0).getDate();
+            
+            let csv = "Data;Dia da Semana;Entrada 1;Saida 1;Entrada 2;Saida 2;Total Horas;Saldo\n";
+            
+            for(let d=1; d<=diasNoMes; d++) {
+                const r = registrosMes[d] || {};
+                const dataObj = new Date(App.ui.anoAtual, App.ui.mesAtual, d);
+                const data = `${d}/${App.ui.mesAtual+1}/${App.ui.anoAtual}`;
+                const diaSemana = dataObj.toLocaleDateString('pt-BR', {weekday: 'short'});
+                
+                const calc = App.calcularDia(r, func.jornada, dataObj);
+                
+                csv += `${data};${diaSemana};${r.e1||''};${r.s1||''};${r.e2||''};${r.s2||''};${App.minToTime(calc.trabalhado)};${App.minToTime(calc.saldo)}\n`;
+            }
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `ponto_${func.nome}_${App.ui.mesAtual+1}.csv`);
+            link.click();
+        }
+    </script>
+</body>
+</html>
