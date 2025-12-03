@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -11,6 +12,7 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 
     <style>
+        /* Mantendo todos os estilos existentes... */
         :root {
             --primary-color: #4361ee;
             --secondary-color: #3a0ca3;
@@ -142,6 +144,47 @@
         .tag { background: #f0f0f0; padding: 8px 12px; border-radius: 20px; font-size: 13px; display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; }
         .tag i { cursor: pointer; color: var(--danger-color); }
 
+        /* NOVOS ESTILOS PARA BANCO DE HORAS */
+        .banco-horas-card {
+            border-top: 4px solid var(--warning-color) !important;
+        }
+        
+        .banco-item {
+            background: #f8f9fa;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 4px solid var(--warning-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .banco-item.abatido {
+            border-left-color: var(--success-color);
+            background: #e8f5e9;
+        }
+        
+        .banco-valor {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .banco-data {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .total-banco {
+            background: linear-gradient(135deg, var(--warning-color), #f3722c);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
         /* Responsive */
         @media (max-width: 1024px) {
             .container { flex-direction: column; }
@@ -195,6 +238,7 @@
                     <a href="#" class="menu-item active" onclick="navegar('ponto', this)"><i class="fas fa-calendar-check"></i> Registro</a>
                     <a href="#" class="menu-item" onclick="navegar('feriados', this)"><i class="fas fa-calendar-star"></i> Dias Especiais</a>
                     <a href="#" class="menu-item" onclick="navegar('funcionarios', this)"><i class="fas fa-users"></i> Funcionários</a>
+                    <a href="#" class="menu-item" onclick="navegar('banco-horas', this)"><i class="fas fa-coins"></i> Banco de Horas</a>
                     <a href="#" class="menu-item" onclick="navegar('importacao', this)"><i class="fas fa-file-excel"></i> Importar Excel</a>
                     <a href="#" class="menu-item" onclick="navegar('relatorios', this)"><i class="fas fa-chart-pie"></i> Relatórios</a>
                     <a href="#" class="menu-item" onclick="navegar('config', this)"><i class="fas fa-cog"></i> Configurações</a>
@@ -229,6 +273,10 @@
                             <div class="stat-value" id="resumoSaldo" style="color: var(--dark-color)">0h</div>
                             <div class="stat-label">Saldo Mensal</div>
                         </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="resumoBancoHoras" style="color: var(--warning-color)">0h</div>
+                            <div class="stat-label">Banco de Horas</div>
+                        </div>
                     </div>
 
                     <div class="table-wrapper">
@@ -243,6 +291,7 @@
                                     <th>Saída 2</th>
                                     <th>Total</th>
                                     <th>Saldo</th>
+                                    <th>Observação</th>
                                 </tr>
                             </thead>
                             <tbody id="tabelaPontoBody"></tbody>
@@ -297,6 +346,77 @@
                         <div style="margin-top: 30px;">
                             <h4>Atestados Cadastrados</h4>
                             <div class="tag-list" id="listaAtestados"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- NOVA SEÇÃO: BANCO DE HORAS -->
+                <section id="banco-horas" class="content-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <i class="fas fa-coins" style="background: linear-gradient(135deg, var(--warning-color), #f3722c);"></i>
+                            <h2>Banco de Horas (Folga Abonada)</h2>
+                        </div>
+                    </div>
+                    
+                    <div class="cards-grid">
+                        <div class="card banco-horas-card">
+                            <h3><i class="fas fa-plus-circle"></i> Adicionar Horas do Banco</h3>
+                            <p style="margin-bottom: 20px; color: #666;">Registre horas extras que foram pagas com folga para abater do saldo.</p>
+                            
+                            <div class="form-group">
+                                <label>Data da Folga (quando o funcionário folgou)</label>
+                                <input type="date" id="bancoDataFolga" class="form-control">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Quantidade de Horas</label>
+                                <input type="number" id="bancoHoras" class="form-control" min="0.5" max="24" step="0.5" placeholder="Ex: 8.0">
+                                <small style="color: #666;">Digite o valor em horas (ex: 8.5 = 8 horas e 30 minutos)</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Descrição / Motivo</label>
+                                <input type="text" id="bancoDescricao" class="form-control" placeholder="Ex: Folga por trabalho em domingo 25/12">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Tipo de Hora Extra</label>
+                                <select id="bancoTipo" class="form-control">
+                                    <option value="domingo">Domingo Trabalhado (100%)</option>
+                                    <option value="feriado">Feriado Trabalhado (100%)</option>
+                                    <option value="noturno">Adicional Noturno (20%)</option>
+                                    <option value="extra">Hora Extra Normal (50%)</option>
+                                    <option value="outro">Outro</option>
+                                </select>
+                            </div>
+                            
+                            <button class="btn btn-warning" onclick="App.adicionarBancoHoras()" style="width: 100%;">
+                                <i class="fas fa-save"></i> Registrar Horas do Banco
+                            </button>
+                        </div>
+                        
+                        <div class="card">
+                            <h3><i class="fas fa-list"></i> Histórico do Banco de Horas</h3>
+                            <p style="margin-bottom: 20px; color: #666;">Horas registradas que serão abatidas do saldo total.</p>
+                            
+                            <div id="listaBancoHoras">
+                                <!-- Itens serão inseridos aqui via JavaScript -->
+                            </div>
+                            
+                            <div class="total-banco" id="totalBancoHoras">
+                                Total em Banco: 0 horas
+                            </div>
+                            
+                            <div style="margin-top: 20px;">
+                                <button class="btn btn-primary" onclick="App.gerarReciboBancoHoras()" style="width: 100%; margin-bottom: 10px;">
+                                    <i class="fas fa-file-pdf"></i> Gerar Recibo de Banco de Horas
+                                </button>
+                                
+                                <button class="btn btn-danger" onclick="App.limparBancoHoras()" style="width: 100%;">
+                                    <i class="fas fa-trash"></i> Limpar Todas as Horas do Banco
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -361,6 +481,13 @@
                                 <i class="fas fa-download"></i> Baixar Excel
                             </button>
                         </div>
+                        <div class="card">
+                            <h3><i class="fas fa-receipt"></i> Recibo Banco de Horas</h3>
+                            <p style="margin: 10px 0;">Gere recibo específico para horas pagas com folga.</p>
+                            <button class="btn btn-warning" onclick="App.gerarReciboBancoHoras()" style="width: 100%; margin-top: 15px;">
+                                <i class="fas fa-file-invoice"></i> Gerar Recibo
+                            </button>
+                        </div>
                     </div>
                 </section>
 
@@ -417,6 +544,7 @@
         </div>
     </div>
 
+    <!-- MODAL PARA FUNCIONÁRIO -->
     <div id="modalFuncionario" class="modal-overlay">
         <div class="modal">
             <button class="modal-close" onclick="fecharModalFuncionario()">&times;</button>
@@ -444,6 +572,7 @@
         </div>
     </div>
 
+    <!-- MODAL PARA IMPORTACAO -->
     <div id="modalImportacao" class="modal-overlay">
         <div class="modal">
             <button class="modal-close" onclick="fecharModalImportacao()">&times;</button>
@@ -486,6 +615,7 @@
                 registros: {},    
                 feriados: [], 
                 atestados: [],
+                bancoHoras: [], // NOVO: Array para armazenar horas do banco
                 config: {
                     funcionarioAtualId: null
                 }
@@ -515,11 +645,11 @@
 
             // --- Gerenciamento de Dados ---
             saveToStorage: function() {
-                localStorage.setItem('ponto_app_data_v2', JSON.stringify(this.data));
+                localStorage.setItem('ponto_app_data_v3', JSON.stringify(this.data)); // Atualizado para v3
             },
 
             loadFromStorage: function() {
-                const raw = localStorage.getItem('ponto_app_data_v2');
+                const raw = localStorage.getItem('ponto_app_data_v3') || localStorage.getItem('ponto_app_data_v2');
                 if (raw) {
                     const parsed = JSON.parse(raw);
                     this.data.empresa = parsed.empresa || this.data.empresa;
@@ -527,11 +657,152 @@
                     this.data.registros = parsed.registros || {};
                     this.data.feriados = parsed.feriados || [];
                     this.data.atestados = parsed.atestados || [];
+                    this.data.bancoHoras = parsed.bancoHoras || []; // NOVO
                     this.data.config = parsed.config || {};
                 }
             },
 
-            // --- BACKUP E RESTAURAÇÃO (NOVO) ---
+            // --- NOVO: BANCO DE HORAS ---
+            adicionarBancoHoras: function() {
+                const dataFolga = document.getElementById('bancoDataFolga').value;
+                const horas = parseFloat(document.getElementById('bancoHoras').value);
+                const descricao = document.getElementById('bancoDescricao').value;
+                const tipo = document.getElementById('bancoTipo').value;
+
+                if (!dataFolga || !horas || horas <= 0 || !descricao) {
+                    showToast('Preencha todos os campos corretamente', 'error');
+                    return;
+                }
+
+                const novoRegistro = {
+                    id: 'banco_' + Date.now(),
+                    dataFolga: dataFolga,
+                    horas: horas,
+                    horasEmMinutos: Math.round(horas * 60), // Converte para minutos
+                    descricao: descricao,
+                    tipo: tipo,
+                    dataRegistro: new Date().toISOString().split('T')[0],
+                    funcionarioId: this.data.config.funcionarioAtualId,
+                    abatido: false
+                };
+
+                this.data.bancoHoras.push(novoRegistro);
+                this.saveToStorage();
+                
+                // Limpar formulário
+                document.getElementById('bancoDataFolga').value = '';
+                document.getElementById('bancoHoras').value = '';
+                document.getElementById('bancoDescricao').value = '';
+                
+                this.renderBancoHoras();
+                this.renderPonto(); // Atualiza a tabela de ponto
+                showToast(`Registradas ${horas}h no banco de horas!`, 'success');
+            },
+
+            removerBancoHoras: function(id) {
+                if (confirm('Remover este registro do banco de horas?')) {
+                    this.data.bancoHoras = this.data.bancoHoras.filter(item => item.id !== id);
+                    this.saveToStorage();
+                    this.renderBancoHoras();
+                    this.renderPonto();
+                    showToast('Registro removido!', 'success');
+                }
+            },
+
+            limparBancoHoras: function() {
+                if (this.data.bancoHoras.length === 0) {
+                    showToast('Não há registros no banco de horas', 'info');
+                    return;
+                }
+
+                if (confirm('Tem certeza que deseja limpar TODAS as horas do banco? Esta ação não pode ser desfeita.')) {
+                    this.data.bancoHoras = [];
+                    this.saveToStorage();
+                    this.renderBancoHoras();
+                    this.renderPonto();
+                    showToast('Banco de horas limpo!', 'success');
+                }
+            },
+
+            renderBancoHoras: function() {
+                const container = document.getElementById('listaBancoHoras');
+                container.innerHTML = '';
+
+                const funcionarioId = this.data.config.funcionarioAtualId;
+                const horasFuncionario = this.data.bancoHoras.filter(item => item.funcionarioId === funcionarioId);
+                
+                if (horasFuncionario.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Nenhuma hora registrada no banco.</p>';
+                    document.getElementById('totalBancoHoras').innerHTML = 'Total em Banco: 0 horas';
+                    return;
+                }
+
+                let totalHoras = 0;
+                
+                horasFuncionario.forEach(item => {
+                    totalHoras += item.horas;
+                    
+                    const dataFormatada = new Date(item.dataFolga).toLocaleDateString('pt-BR');
+                    const tipoMap = {
+                        'domingo': 'Domingo (100%)',
+                        'feriado': 'Feriado (100%)',
+                        'noturno': 'Noturno (20%)',
+                        'extra': 'Extra (50%)',
+                        'outro': 'Outro'
+                    };
+                    
+                    const html = `
+                        <div class="banco-item ${item.abatido ? 'abatido' : ''}">
+                            <div>
+                                <div class="banco-valor">${item.horas}h</div>
+                                <div class="banco-data">${dataFormatada} - ${tipoMap[item.tipo] || item.tipo}</div>
+                                <div style="font-size: 12px; color: #555;">${item.descricao}</div>
+                            </div>
+                            <div>
+                                <button class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;" onclick="App.removerBancoHoras('${item.id}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    container.innerHTML += html;
+                });
+
+                document.getElementById('totalBancoHoras').innerHTML = `Total em Banco: ${totalHoras.toFixed(1)} horas`;
+            },
+
+            getTotalBancoHoras: function() {
+                const funcionarioId = this.data.config.funcionarioAtualId;
+                return this.data.bancoHoras
+                    .filter(item => item.funcionarioId === funcionarioId)
+                    .reduce((total, item) => total + item.horasEmMinutos, 0);
+            },
+
+            // Atualização do cálculo para considerar banco de horas
+            calcularDiaComBanco: function(reg, jornadaHoras, dataObj, bancoHorasTotal) {
+                const calculoOriginal = this.calcularDia(reg, jornadaHoras, dataObj);
+                
+                // Aplicar desconto do banco de horas se houver saldo positivo
+                if (bancoHorasTotal > 0 && calculoOriginal.saldo > 0) {
+                    const desconto = Math.min(calculoOriginal.saldo, bancoHorasTotal);
+                    const saldoAjustado = calculoOriginal.saldo - desconto;
+                    
+                    return {
+                        ...calculoOriginal,
+                        saldo: saldoAjustado,
+                        bancoUtilizado: desconto,
+                        saldoOriginal: calculoOriginal.saldo
+                    };
+                }
+                
+                return {
+                    ...calculoOriginal,
+                    bancoUtilizado: 0,
+                    saldoOriginal: calculoOriginal.saldo
+                };
+            },
+
+            // BACKUP E RESTAURAÇÃO
             exportarBackup: function() {
                 const dataStr = JSON.stringify(this.data, null, 2);
                 const blob = new Blob([dataStr], { type: 'application/json' });
@@ -551,7 +822,6 @@
                 reader.onload = (e) => {
                     try {
                         const importedData = JSON.parse(e.target.result);
-                        // Validação básica
                         if (!importedData.funcionarios || !importedData.registros) {
                             throw new Error("Formato de arquivo inválido");
                         }
@@ -559,14 +829,14 @@
                         if (confirm('Tem certeza? Isso substituirá todos os dados atuais pelos do backup.')) {
                             this.data = importedData;
                             this.saveToStorage();
-                            this.init(); // Reinicia UI
+                            this.init();
                             showToast('Backup restaurado com sucesso!', 'success');
                         }
                     } catch (err) {
                         showToast('Erro ao ler arquivo de backup.', 'error');
                         console.error(err);
                     }
-                    input.value = ''; // Limpa input
+                    input.value = '';
                 };
                 reader.readAsText(input.files[0]);
             },
@@ -574,6 +844,7 @@
             limparSistema: function() {
                 if (confirm('ATENÇÃO: Isso apagará TODOS os dados, funcionários e registros. Não há como desfazer.\n\nDeseja continuar?')) {
                     if(confirm('Tem certeza absoluta?')) {
+                        localStorage.removeItem('ponto_app_data_v3');
                         localStorage.removeItem('ponto_app_data_v2');
                         location.reload();
                     }
@@ -688,8 +959,127 @@
                 };
             },
 
+            // NOVO: Gerar recibo de banco de horas
+            gerarReciboBancoHoras: function() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('p', 'mm', 'a4');
+                const func = this.getFuncionarioAtual();
+                const funcionarioId = this.data.config.funcionarioAtualId;
+                
+                const horasFuncionario = this.data.bancoHoras.filter(item => item.funcionarioId === funcionarioId);
+                
+                if (horasFuncionario.length === 0) {
+                    showToast('Não há horas no banco para gerar recibo', 'warning');
+                    return;
+                }
+
+                const azulPrincipal = [67, 97, 238];
+                const laranjaBanco = [248, 150, 30];
+
+                // Cabeçalho
+                doc.setFillColor(...laranjaBanco);
+                doc.rect(0, 0, 210, 40, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(22);
+                doc.setFont("helvetica", "bold");
+                doc.text("RECIBO DE BANCO DE HORAS", 105, 18, { align: "center" });
+                
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                doc.text(`${App.data.empresa.nome} | CNPJ: ${App.data.empresa.cnpj}`, 105, 26, { align: "center" });
+                doc.text(`Data de Emissão: ${new Date().toLocaleDateString('pt-BR')}`, 105, 32, { align: "center" });
+
+                // Informações do Funcionário
+                doc.setFillColor(245, 247, 250);
+                doc.setDrawColor(200, 200, 200);
+                doc.roundedRect(14, 45, 182, 25, 3, 3, 'FD');
+
+                doc.setTextColor(50, 50, 50);
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "bold");
+                doc.text("FUNCIONÁRIO:", 20, 55);
+                doc.text("CARGO:", 120, 55);
+                doc.text("MATRÍCULA:", 20, 65);
+                doc.text("TOTAL EM BANCO:", 120, 65);
+
+                const totalHoras = horasFuncionario.reduce((total, item) => total + item.horas, 0);
+                
+                doc.setFont("helvetica", "normal");
+                doc.text(func.nome.toUpperCase(), 50, 55);
+                doc.text(func.cargo.toUpperCase(), 140, 55);
+                doc.text(func.codigo, 50, 65);
+                doc.text(`${totalHoras.toFixed(1)} HORAS`, 140, 65);
+
+                // Tabela de Horas
+                const bodyData = [];
+                horasFuncionario.forEach(item => {
+                    const dataFormatada = new Date(item.dataFolga).toLocaleDateString('pt-BR');
+                    const tipoMap = {
+                        'domingo': 'Domingo (100%)',
+                        'feriado': 'Feriado (100%)',
+                        'noturno': 'Noturno (20%)',
+                        'extra': 'Extra (50%)',
+                        'outro': 'Outro'
+                    };
+                    
+                    bodyData.push([
+                        dataFormatada,
+                        tipoMap[item.tipo] || item.tipo,
+                        item.descricao,
+                        `${item.horas}h`
+                    ]);
+                });
+
+                doc.autoTable({
+                    startY: 75,
+                    head: [['Data da Folga', 'Tipo', 'Descrição', 'Horas']],
+                    body: bodyData,
+                    theme: 'grid',
+                    headStyles: { fillColor: laranjaBanco, textColor: 255, fontStyle: 'bold', halign: 'center' },
+                    columnStyles: {
+                        0: { halign: 'center' },
+                        1: { halign: 'center' },
+                        2: { halign: 'left' },
+                        3: { halign: 'center', fontStyle: 'bold' }
+                    },
+                    alternateRowStyles: { fillColor: [248, 249, 252] },
+                });
+
+                let finalY = doc.lastAutoTable.finalY + 15;
+
+                // Declaração
+                doc.setFontSize(11);
+                doc.setFont("helvetica", "bold");
+                doc.text("DECLARAÇÃO", 20, finalY);
+                
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(10);
+                const declaracao = `Declaro que as horas acima relacionadas foram trabalhadas em dias especiais (domingos, feriados ou período noturno) e serão compensadas com folga, conforme estabelecido no artigo 7º da CLT e convenção coletiva.`;
+                
+                doc.text(declaracao, 20, finalY + 10, { maxWidth: 170 });
+
+                finalY += 30;
+
+                // Assinaturas
+                doc.setDrawColor(0, 0, 0);
+                doc.line(20, finalY, 90, finalY);
+                doc.setFontSize(9);
+                doc.text("ASSINATURA DO EMPREGADOR", 55, finalY + 5, { align: "center" });
+                
+                doc.line(120, finalY, 190, finalY);
+                doc.text("ASSINATURA DO FUNCIONÁRIO", 155, finalY + 5, { align: "center" });
+
+                // Rodapé
+                doc.setFontSize(8);
+                doc.setTextColor(150, 150, 150);
+                doc.text("Documento gerado por Ponto Enterprise System - CLT Compliance", 105, 290, { align: "center" });
+
+                doc.save(`Recibo_Banco_Horas_${func.nome.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`);
+                showToast('Recibo do banco de horas gerado!', 'success');
+            },
+
             setupDates: function() {
-                const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+                const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julço', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
                 const selMes = document.getElementById('selectMes');
                 const selAno = document.getElementById('selectAno');
                 
@@ -698,9 +1088,9 @@
                     meses.forEach((m, i) => {
                         selM.innerHTML += `<option value="${i}" ${i === this.ui.mesAtual ? 'selected' : ''}>${m}</option>`;
                     });
-                    selA.innerHTML = '';
+                    selAno.innerHTML = '';
                     for(let y = this.ui.anoAtual - 2; y <= this.ui.anoAtual + 2; y++) {
-                        selA.innerHTML += `<option value="${y}" ${y === this.ui.anoAtual ? 'selected' : ''}>${y}</option>`;
+                        selAno.innerHTML += `<option value="${y}" ${y === this.ui.anoAtual ? 'selected' : ''}>${y}</option>`;
                     }
                 }
 
@@ -717,6 +1107,7 @@
                 this.renderListaFuncionarios();
                 this.renderFeriados();
                 this.renderAtestados();
+                this.renderBancoHoras(); // NOVO
                 this.renderConfigEmpresa();
             },
 
@@ -742,8 +1133,6 @@
                 document.getElementById('confEmpresaEndereco').value = this.data.empresa.endereco;
             },
 
-            // --- CORREÇÃO DO BUG DO CURSOR ---
-            // Renderiza a tabela inteira (apenas ao mudar de mês ou funcionário)
             renderPonto: function() {
                 const tbody = document.getElementById('tabelaPontoBody');
                 tbody.innerHTML = '';
@@ -752,6 +1141,8 @@
                 const diasNoMes = new Date(this.ui.anoAtual, this.ui.mesAtual + 1, 0).getDate();
                 const key = this.getKeyRegistro();
                 const registrosMes = this.data.registros[key] || {};
+                const bancoHorasTotal = this.getTotalBancoHoras();
+                let bancoDisponivel = bancoHorasTotal;
                 
                 for (let d = 1; d <= diasNoMes; d++) {
                     const dataObj = new Date(this.ui.anoAtual, this.ui.mesAtual, d);
@@ -765,15 +1156,24 @@
                     const isFeriado = this.isFeriado(dataFormatada);
 
                     const reg = registrosMes[d] || {};
-                    const calculo = this.calcularDia(reg, func.jornada, dataObj);
+                    const calculo = this.calcularDiaComBanco(reg, func.jornada, dataObj, bancoDisponivel);
                     const isAtestadoDay = calculo.isAtestadoDay;
 
                     const diaNome = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][diaSemana];
                     
                     let rowClass = '';
+                    let observacao = '';
+                    
                     if (isDomingo) rowClass = 'row-domingo';
                     if (isFeriado) rowClass = 'row-feriado';
                     if (isAtestadoDay) rowClass = 'row-atestado';
+                    
+                    // Adiciona observação se houve desconto do banco
+                    if (calculo.bancoUtilizado && calculo.bancoUtilizado > 0) {
+                        const horasUtilizadas = this.minToTime(calculo.bancoUtilizado);
+                        observacao = `Banco: -${horasUtilizadas}`;
+                        bancoDisponivel -= calculo.bancoUtilizado;
+                    }
 
                     const diaExtraInfo = isFeriado ? '<i class="fas fa-star" style="font-size:10px; color:var(--special-color)"></i>' : isAtestadoDay ? '<i class="fas fa-notes-medical" style="font-size:10px; color:#1890ff"></i>' : '';
 
@@ -787,6 +1187,7 @@
                             <td><input type="time" class="time-input" onchange="App.updatePonto(${d}, 's2', this.value)" value="${reg.s2 || ''}"></td>
                             <td class="col-total">${this.minToTime(calculo.trabalhado)}</td>
                             <td class="col-saldo ${calculo.saldo >= 0 ? 'saldo-positivo' : 'saldo-negativo'}">${this.minToTime(calculo.saldo)}</td>
+                            <td style="font-size: 12px; color: #666;">${observacao}</td>
                         </tr>
                     `;
                     tbody.insertAdjacentHTML('beforeend', html);
@@ -794,7 +1195,6 @@
                 this.updateDashboardTotals();
             },
 
-            // Nova função para atualizar apenas os cálculos, sem redesenhar a tabela
             updatePonto: function(dia, campo, valor) {
                 const key = this.getKeyRegistro();
                 if (!this.data.registros[key]) this.data.registros[key] = {};
@@ -803,7 +1203,6 @@
                 this.data.registros[key][dia][campo] = valor;
                 this.saveToStorage();
                 
-                // Em vez de renderPonto(), atualizamos só a linha e o dashboard
                 this.updateRowVisuals(dia);
                 this.updateDashboardTotals();
             },
@@ -816,17 +1215,24 @@
                 const dataObj = new Date(this.ui.anoAtual, this.ui.mesAtual, dia);
                 const key = this.getKeyRegistro();
                 const reg = this.data.registros[key][dia] || {};
+                const bancoHorasTotal = this.getTotalBancoHoras();
                 
-                const calculo = this.calcularDia(reg, func.jornada, dataObj);
+                const calculo = this.calcularDiaComBanco(reg, func.jornada, dataObj, bancoHorasTotal);
                 
-                // Atualiza células de total e saldo
                 const colTotal = row.querySelector('.col-total');
                 const colSaldo = row.querySelector('.col-saldo');
+                const colObservacao = row.querySelector('td:nth-child(9)');
                 
                 if(colTotal) colTotal.textContent = this.minToTime(calculo.trabalhado);
                 if(colSaldo) {
                     colSaldo.textContent = this.minToTime(calculo.saldo);
                     colSaldo.className = `col-saldo ${calculo.saldo >= 0 ? 'saldo-positivo' : 'saldo-negativo'}`;
+                }
+                
+                // Atualizar observação
+                if(colObservacao) {
+                    colObservacao.textContent = calculo.bancoUtilizado > 0 ? 
+                        `Banco: -${this.minToTime(calculo.bancoUtilizado)}` : '';
                 }
             },
 
@@ -835,14 +1241,17 @@
                 const diasNoMes = new Date(this.ui.anoAtual, this.ui.mesAtual + 1, 0).getDate();
                 const key = this.getKeyRegistro();
                 const registrosMes = this.data.registros[key] || {};
+                const bancoHorasTotal = this.getTotalBancoHoras();
+                let bancoDisponivel = bancoHorasTotal;
                 
                 let somaTrabalhada = 0;
                 let somaSaldo = 0;
+                let somaBancoUtilizado = 0;
 
                 for (let d = 1; d <= diasNoMes; d++) {
                     const dataObj = new Date(this.ui.anoAtual, this.ui.mesAtual, d);
                     const reg = registrosMes[d] || {};
-                    const calculo = this.calcularDia(reg, func.jornada, dataObj);
+                    const calculo = this.calcularDiaComBanco(reg, func.jornada, dataObj, bancoDisponivel);
 
                     const diaSemana = dataObj.getDay();
                     const isDomingo = diaSemana === 0;
@@ -854,16 +1263,30 @@
                     if (calculo.teveBatida || calculo.isAtestadoDay || (!isDomingo && !isFeriado)) { 
                          somaTrabalhada += calculo.trabalhado;
                          somaSaldo += calculo.saldo;
+                         
+                         if (calculo.bancoUtilizado) {
+                             somaBancoUtilizado += calculo.bancoUtilizado;
+                             bancoDisponivel -= calculo.bancoUtilizado;
+                         }
                     }
                 }
 
+                // Ajustar saldo final considerando banco de horas
+                const saldoFinal = somaSaldo;
+                
                 document.getElementById('resumoTrabalhadas').textContent = this.minToTime(somaTrabalhada);
-                document.getElementById('resumoExtras').textContent = somaSaldo > 0 ? this.minToTime(somaSaldo) : '0h 00m';
+                document.getElementById('resumoExtras').textContent = saldoFinal > 0 ? this.minToTime(saldoFinal) : '0h 00m';
+                
                 const elSaldo = document.getElementById('resumoSaldo');
-                elSaldo.textContent = this.minToTime(somaSaldo);
-                elSaldo.style.color = somaSaldo >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                elSaldo.textContent = this.minToTime(saldoFinal);
+                elSaldo.style.color = saldoFinal >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                
+                // Atualizar card do banco de horas
+                const elBanco = document.getElementById('resumoBancoHoras');
+                const bancoRestante = bancoHorasTotal - somaBancoUtilizado;
+                elBanco.textContent = this.minToTime(bancoRestante);
+                elBanco.style.color = 'var(--warning-color)';
             },
-            // --- FIM CORREÇÃO ---
 
             renderFeriados: function() {
                 const list = document.getElementById('listaFeriados');
@@ -929,7 +1352,7 @@
             removerAtestado: function(dataInicio, dias) {
                 this.data.atestados = this.data.atestados.filter(a => !(a.dataInicio === dataInicio && a.dias === dias));
                 this.saveToStorage();
-                this.renderAtestados();
+                    this.renderAtestados();
                 this.renderPonto();
             },
 
@@ -1140,6 +1563,8 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('p', 'mm', 'a4');
             const func = App.getFuncionarioAtual();
+            const funcionarioId = App.data.config.funcionarioAtualId;
+            const bancoHorasTotal = App.getTotalBancoHoras();
             
             const azulPrincipal = [67, 97, 238];
             const cinzaEscuro = [50, 50, 50];
@@ -1182,6 +1607,7 @@
             
             let totalTrabalhado = 0;
             let totalSaldo = 0;
+            let bancoDisponivel = bancoHorasTotal;
 
             for (let d = 1; d <= diasNoMes; d++) {
                 const dataObj = new Date(App.ui.anoAtual, App.ui.mesAtual, d);
@@ -1189,7 +1615,7 @@
                 const diaNome = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][diaSemana];
                 const reg = registrosMes[d] || {};
                 
-                const calc = App.calcularDia(reg, func.jornada, dataObj);
+                const calc = App.calcularDiaComBanco(reg, func.jornada, dataObj, bancoDisponivel);
                 
                 const y = dataObj.getFullYear();
                 const m = (dataObj.getMonth() + 1).toString().padStart(2, '0');
@@ -1201,6 +1627,10 @@
                 if (calc.teveBatida || isAtestadoDay || (!isFeriado && diaSemana !== 0)) {
                     totalTrabalhado += calc.trabalhado;
                     totalSaldo += calc.saldo;
+                    
+                    if (calc.bancoUtilizado) {
+                        bancoDisponivel -= calc.bancoUtilizado;
+                    }
                 }
 
                 let textColor = [0, 0, 0];
@@ -1219,6 +1649,11 @@
                     diaComplemento = ' (Ates)';
                 }
 
+                let observacaoCell = '-';
+                if (calc.bancoUtilizado > 0) {
+                    observacaoCell = { content: `Banco: -${App.minToTime(calc.bancoUtilizado)}`, styles: { textColor: [248, 150, 30], fontSize: 9 } };
+                }
+
                 bodyData.push([
                     { content: `${d.toString().padStart(2,'0')}/${(App.ui.mesAtual+1).toString().padStart(2,'0')}`, styles: { fontStyle: 'bold', fillColor: fillColor } },
                     { content: diaNome + diaComplemento, styles: { fillColor: fillColor, textColor: textColor } },
@@ -1227,13 +1662,14 @@
                     reg.e2 || '-',
                     reg.s2 || '-',
                     App.minToTime(calc.trabalhado),
-                    { content: App.minToTime(calc.saldo), styles: { textColor: calc.saldo < 0 ? [200, 50, 50] : [0, 150, 0], fontStyle: 'bold' } }
+                    { content: App.minToTime(calc.saldo), styles: { textColor: calc.saldo < 0 ? [200, 50, 50] : [0, 150, 0], fontStyle: 'bold' } },
+                    observacaoCell
                 ]);
             }
 
             doc.autoTable({
                 startY: 75,
-                head: [['Data', 'Dia', 'Ent. 1', 'Saí. 1', 'Ent. 2', 'Saí. 2', 'Total', 'Saldo']],
+                head: [['Data', 'Dia', 'Ent. 1', 'Saí. 1', 'Ent. 2', 'Saí. 2', 'Total', 'Saldo', 'Observação']],
                 body: bodyData,
                 theme: 'grid',
                 headStyles: { fillColor: azulPrincipal, textColor: 255, fontStyle: 'bold', halign: 'center' },
@@ -1245,7 +1681,8 @@
                     4: { halign: 'center' },
                     5: { halign: 'center' },
                     6: { halign: 'center', fontStyle: 'bold' },
-                    7: { halign: 'center', fontStyle: 'bold' }
+                    7: { halign: 'center', fontStyle: 'bold' },
+                    8: { halign: 'center', fontSize: 9 }
                 },
                 alternateRowStyles: { fillColor: [248, 249, 252] },
             });
@@ -1256,8 +1693,12 @@
             const statusSaldo = saldoFinalEmMinutos >= 0 ? 'POSITIVO (Horas Extras)' : 'NEGATIVO (Horas a Compensar)';
             const corStatus = saldoFinalEmMinutos >= 0 ? [0, 150, 0] : [200, 50, 50];
 
-            doc.setFillColor(240, 240, 240);
-            doc.rect(14, finalY, 182, 30, 'F');
+            // Informações do banco de horas
+            const bancoRestante = bancoDisponivel;
+            const bancoUtilizado = bancoHorasTotal - bancoRestante;
+
+            doc.setFillColor(255, 248, 230);
+            doc.rect(14, finalY, 182, 40, 'F');
             doc.setTextColor(...cinzaEscuro);
             doc.setFontSize(11);
 
@@ -1271,15 +1712,18 @@
             
             doc.setFont("helvetica", "bold");
             doc.setTextColor(...corStatus);
-            doc.text(`STATUS: ${statusSaldo}`, 20, finalY + 23);
+            doc.text(`STATUS: ${statusSaldo}`, 20, finalY + 22);
             
-            doc.setTextColor(...cinzaEscuro);
+            doc.setTextColor([248, 150, 30]);
+            doc.setFont("helvetica", "bold");
+            doc.text(`BANCO DE HORAS: ${App.minToTime(bancoUtilizado)} utilizadas | ${App.minToTime(bancoRestante)} restantes`, 20, finalY + 30);
             
-            finalY += 60;
+            finalY += 50;
+            
             doc.setDrawColor(0, 0, 0);
-            
             doc.line(20, finalY, 90, finalY);
             doc.setFontSize(9);
+            doc.setTextColor(...cinzaEscuro);
             doc.text("ASSINATURA DO EMPREGADOR", 55, finalY + 5, { align: "center" });
             
             doc.line(120, finalY, 190, finalY);
@@ -1287,10 +1731,10 @@
 
             doc.setFontSize(8);
             doc.setTextColor(150, 150, 150);
-            doc.text("Gerado por Ponto Enterprise System", 105, 290, { align: "center" });
+            doc.text("Gerado por Ponto Enterprise System - Com banco de horas CLT", 105, 290, { align: "center" });
 
-            doc.save(`Ponto_${func.nome.replace(/\s+/g, '_')}_${App.ui.mesAtual+1}_${App.ui.anoAtual}.pdf`);
-            showToast('PDF gerado com sucesso!', 'success');
+            doc.save(`Ponto_Banco_${func.nome.replace(/\s+/g, '_')}_${App.ui.mesAtual+1}_${App.ui.anoAtual}.pdf`);
+            showToast('PDF com banco de horas gerado!', 'success');
         }
 
         function exportarTabelaExcel() {
@@ -1298,8 +1742,10 @@
             const key = App.getKeyRegistro();
             const registrosMes = App.data.registros[key] || {};
             const diasNoMes = new Date(App.ui.anoAtual, App.ui.mesAtual + 1, 0).getDate();
+            const bancoHorasTotal = App.getTotalBancoHoras();
+            let bancoDisponivel = bancoHorasTotal;
             
-            let csv = "Data;Dia da Semana;Entrada 1;Saida 1;Entrada 2;Saida 2;Total Horas;Saldo\n";
+            let csv = "Data;Dia da Semana;Entrada 1;Saida 1;Entrada 2;Saida 2;Total Horas;Saldo;Observação\n";
             
             for(let d=1; d<=diasNoMes; d++) {
                 const r = registrosMes[d] || {};
@@ -1307,16 +1753,22 @@
                 const data = `${d}/${App.ui.mesAtual+1}/${App.ui.anoAtual}`;
                 const diaSemana = dataObj.toLocaleDateString('pt-BR', {weekday: 'short'});
                 
-                const calc = App.calcularDia(r, func.jornada, dataObj);
+                const calc = App.calcularDiaComBanco(r, func.jornada, dataObj, bancoDisponivel);
                 
-                csv += `${data};${diaSemana};${r.e1||''};${r.s1||''};${r.e2||''};${r.s2||''};${App.minToTime(calc.trabalhado)};${App.minToTime(calc.saldo)}\n`;
+                let observacao = '';
+                if (calc.bancoUtilizado > 0) {
+                    observacao = `Banco: -${App.minToTime(calc.bancoUtilizado)}`;
+                    bancoDisponivel -= calc.bancoUtilizado;
+                }
+                
+                csv += `${data};${diaSemana};${r.e1||''};${r.s1||''};${r.e2||''};${r.s2||''};${App.minToTime(calc.trabalhado)};${App.minToTime(calc.saldo)};${observacao}\n`;
             }
             
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
             const url = URL.createObjectURL(blob);
             link.setAttribute("href", url);
-            link.setAttribute("download", `ponto_${func.nome}_${App.ui.mesAtual+1}.csv`);
+            link.setAttribute("download", `ponto_banco_${func.nome}_${App.ui.mesAtual+1}.csv`);
             link.click();
         }
     </script>
