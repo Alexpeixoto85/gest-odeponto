@@ -12,7 +12,6 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
 
     <style>
-        /* Mantendo todos os estilos existentes... */
         :root {
             --primary-color: #4361ee;
             --secondary-color: #3a0ca3;
@@ -39,64 +38,65 @@
         .main-content { display: flex; flex: 1; min-height: calc(100vh - var(--header-height) - 40px); }
         
         /* Header */
-        .app-header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 0 40px; height: var(--header-height); display: flex; justify-content: space-between; align-items: center; position: relative; overflow: hidden; }
+        .app-header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 0 30px; height: var(--header-height); display: flex; justify-content: space-between; align-items: center; position: relative; overflow: hidden; }
         .app-header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,0 L100,0 L100,100 Z" fill="rgba(255,255,255,0.1)"/></svg>'); background-size: cover; }
         
         .logo { display: flex; align-items: center; gap: 15px; z-index: 1; }
         .logo-icon { background: rgba(255, 255, 255, 0.2); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
         .logo-icon i { font-size: 24px; color: white; }
-        .logo-text h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
-        .logo-text p { font-size: 13px; opacity: 0.9; font-weight: 300; }
+        .logo-text h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+        .logo-text p { font-size: 12px; opacity: 0.9; font-weight: 300; }
         
-        .employee-selector { z-index: 10; margin-right: 20px; }
-        .employee-selector select { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 15px; border-radius: 8px; cursor: pointer; backdrop-filter: blur(5px); }
+        .employee-selector { z-index: 10; margin-right: 10px; }
+        .employee-selector select { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 8px 15px; border-radius: 8px; cursor: pointer; backdrop-filter: blur(5px); font-size: 14px; max-width: 180px; }
         .employee-selector select option { color: #333; background: white; }
 
-        .current-date { text-align: right; z-index: 1; background: rgba(255, 255, 255, 0.1); padding: 10px 20px; border-radius: var(--border-radius); backdrop-filter: blur(10px); }
+        .current-date { text-align: right; z-index: 1; background: rgba(255, 255, 255, 0.1); padding: 8px 15px; border-radius: var(--border-radius); backdrop-filter: blur(10px); }
         
         /* Sidebar */
-        .sidebar { width: var(--sidebar-width); background: linear-gradient(180deg, #2d3047 0%, #1c1e2e 100%); color: white; padding: 25px 20px; display: flex; flex-direction: column; position: relative; }
+        .sidebar { width: var(--sidebar-width); background: linear-gradient(180deg, #2d3047 0%, #1c1e2e 100%); color: white; padding: 20px 15px; display: flex; flex-direction: column; position: relative; }
         .sidebar::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--accent-color), var(--success-color)); }
         
-        .user-profile { text-align: center; padding: 20px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 25px; }
-        .user-avatar { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-color), var(--accent-color)); margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 32px; border: 3px solid rgba(255, 255, 255, 0.2); }
-        .user-badge { display: inline-block; background: var(--success-color); color: white; padding: 3px 10px; border-radius: 20px; font-size: 11px; margin-top: 8px; }
+        .user-profile { text-align: center; padding: 15px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 20px; }
+        .user-avatar { width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-color), var(--accent-color)); margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 28px; border: 3px solid rgba(255, 255, 255, 0.2); overflow: hidden; }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .user-badge { display: inline-block; background: var(--success-color); color: white; padding: 3px 10px; border-radius: 20px; font-size: 11px; margin-top: 6px; }
         
-        .menu { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-        .menu-item { display: flex; align-items: center; gap: 15px; padding: 16px 20px; border-radius: 12px; cursor: pointer; transition: var(--transition); font-weight: 500; color: rgba(255, 255, 255, 0.7); text-decoration: none; }
+        .menu { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+        .menu-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 10px; cursor: pointer; transition: var(--transition); font-weight: 500; color: rgba(255, 255, 255, 0.7); text-decoration: none; font-size: 14px; }
         .menu-item:hover { background: rgba(255, 255, 255, 0.1); color: white; transform: translateX(5px); }
         .menu-item.active { background: linear-gradient(90deg, var(--primary-color), var(--accent-color)); color: white; box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3); }
 
         /* Content */
-        .content-area { flex: 1; padding: 30px 40px; overflow-y: auto; background: #f8fafc; }
+        .content-area { flex: 1; padding: 25px 30px; overflow-y: auto; background: #f8fafc; }
         .content-section { display: none; animation: fadeIn 0.5s ease-out; }
         .content-section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
         /* Components */
-        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #e9ecef; }
-        .section-title { display: flex; align-items: center; gap: 15px; }
-        .section-title i { background: linear-gradient(135deg, var(--primary-color), var(--accent-color)); width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; }
-        .section-title h2 { font-size: 28px; font-weight: 700; color: var(--dark-color); }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #e9ecef; flex-wrap: wrap; gap: 15px; }
+        .section-title { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .section-title i { background: linear-gradient(135deg, var(--primary-color), var(--accent-color)); width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; flex-shrink: 0; }
+        .section-title h2 { font-size: 24px; font-weight: 700; color: var(--dark-color); }
         
-        .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-bottom: 30px; }
-        .card { background: white; border-radius: var(--border-radius); padding: 25px; box-shadow: var(--box-shadow); transition: var(--transition); border: 1px solid #e9ecef; position: relative; overflow: hidden; }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12); }
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        .card { background: white; border-radius: var(--border-radius); padding: 20px; box-shadow: var(--box-shadow); transition: var(--transition); border: 1px solid #e9ecef; position: relative; overflow: hidden; }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12); }
         .card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, var(--primary-color), var(--accent-color)); }
         
         /* Table */
-        .table-wrapper { background: white; border-radius: var(--border-radius); overflow: hidden; box-shadow: var(--box-shadow); margin: 30px 0; overflow-x: auto; }
+        .table-wrapper { background: white; border-radius: var(--border-radius); overflow: hidden; box-shadow: var(--box-shadow); margin: 25px 0; overflow-x: auto; }
         .table { width: 100%; border-collapse: collapse; min-width: 1000px; }
         .table thead { background: linear-gradient(90deg, var(--primary-color), var(--secondary-color)); }
-        .table th { padding: 18px 16px; text-align: left; color: white; font-weight: 600; font-size: 14px; text-transform: uppercase; }
-        .table td { padding: 16px; border-bottom: 1px solid #e9ecef; vertical-align: middle; }
+        .table th { padding: 16px 14px; text-align: left; color: white; font-weight: 600; font-size: 13px; text-transform: uppercase; }
+        .table td { padding: 14px; border-bottom: 1px solid #e9ecef; vertical-align: middle; font-size: 14px; }
         .table tbody tr:hover { background-color: #f8f9fa; }
         
-        .time-input { width: 100px; padding: 10px; text-align: center; border: 1px solid #dee2e6; border-radius: 6px; font-size: 14px; }
+        .time-input { width: 90px; padding: 8px; text-align: center; border: 1px solid #dee2e6; border-radius: 6px; font-size: 13px; }
         .time-input:focus { border-color: var(--primary-color); outline: none; box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1); }
         
         /* Status Badges */
-        .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
+        .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
         
         .row-domingo { background: #ffeaea !important; }
         .row-domingo td { color: #c0392b; }
@@ -108,14 +108,14 @@
         .saldo-positivo { color: var(--success-color); font-weight: bold; }
         .saldo-negativo { color: var(--danger-color); font-weight: bold; }
 
-        /* Dashboard */
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 25px; margin: 30px 0; }
-        .stat-card { background: white; padding: 25px; border-radius: var(--border-radius); box-shadow: var(--box-shadow); text-align: center; position: relative; }
-        .stat-value { font-size: 36px; font-weight: 700; margin: 10px 0; color: var(--dark-color); }
-        .stat-label { color: var(--gray-color); font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        /* Dashboard - CARDS MENORES */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 25px 0; }
+        .stat-card { background: white; padding: 18px; border-radius: var(--border-radius); box-shadow: var(--box-shadow); text-align: center; position: relative; }
+        .stat-value { font-size: 28px; font-weight: 700; margin: 8px 0; color: var(--dark-color); }
+        .stat-label { color: var(--gray-color); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
 
         /* Buttons & Forms */
-        .btn { padding: 12px 24px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 15px; transition: var(--transition); display: inline-flex; align-items: center; gap: 10px; color: white; }
+        .btn { padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: var(--transition); display: inline-flex; align-items: center; gap: 8px; color: white; }
         .btn-primary { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); }
         .btn-success { background: linear-gradient(135deg, var(--success-color), #2a9d8f); }
         .btn-danger { background: linear-gradient(135deg, var(--danger-color), #d00000); }
@@ -123,25 +123,25 @@
         .btn-special { background: linear-gradient(135deg, var(--special-color), #7209b7); }
         .btn-dark { background: linear-gradient(135deg, #343a40, #212529); }
         .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-        .btn-group { display: flex; gap: 15px; flex-wrap: wrap; margin-top: 20px; }
+        .btn-group { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 15px; }
         
-        .form-control { width: 100%; padding: 14px 16px; border: 2px solid #e0e0e0; border-radius: 10px; margin-bottom: 15px; font-size: 14px; }
+        .form-control { width: 100%; padding: 12px 14px; border: 2px solid #e0e0e0; border-radius: 8px; margin-bottom: 12px; font-size: 13px; }
         .form-control:focus { border-color: var(--primary-color); outline: none; }
 
         /* Upload Zone */
-        .upload-zone { border: 2px dashed #ccc; border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.3s; background: #fafafa; }
+        .upload-zone { border: 2px dashed #ccc; border-radius: 10px; padding: 25px; text-align: center; cursor: pointer; transition: all 0.3s; background: #fafafa; }
         .upload-zone:hover { border-color: var(--primary-color); background: #eef2ff; }
-        .upload-zone i { font-size: 40px; color: var(--gray-color); margin-bottom: 15px; }
+        .upload-zone i { font-size: 32px; color: var(--gray-color); margin-bottom: 10px; }
 
         /* Modal */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px); padding: 20px; }
         .modal-overlay.active { display: flex; animation: fadeIn 0.3s; }
-        .modal { background: white; border-radius: 20px; width: 100%; max-width: 600px; padding: 30px; position: relative; max-height: 90vh; overflow-y: auto; }
-        .modal-close { position: absolute; top: 20px; right: 20px; font-size: 24px; cursor: pointer; background: none; border: none; }
+        .modal { background: white; border-radius: 16px; width: 100%; max-width: 500px; padding: 25px; position: relative; max-height: 90vh; overflow-y: auto; }
+        .modal-close { position: absolute; top: 15px; right: 15px; font-size: 22px; cursor: pointer; background: none; border: none; }
 
         /* Tag List for Holidays */
-        .tag-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 15px; }
-        .tag { background: #f0f0f0; padding: 8px 12px; border-radius: 20px; font-size: 13px; display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; }
+        .tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .tag { background: #f0f0f0; padding: 6px 10px; border-radius: 16px; font-size: 12px; display: flex; align-items: center; gap: 6px; border: 1px solid #ddd; }
         .tag i { cursor: pointer; color: var(--danger-color); }
 
         /* NOVOS ESTILOS PARA BANCO DE HORAS */
@@ -151,67 +151,190 @@
         
         .banco-item {
             background: #f8f9fa;
-            padding: 12px 15px;
+            padding: 10px 12px;
             border-radius: 8px;
             margin-bottom: 8px;
             border-left: 4px solid var(--warning-color);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            font-size: 13px;
         }
         
-        .banco-item.abatido {
+        .banco-item.entrada {
             border-left-color: var(--success-color);
             background: #e8f5e9;
         }
         
+        .banco-item.saida {
+            border-left-color: var(--danger-color);
+            background: #ffeaea;
+        }
+        
         .banco-valor {
             font-weight: bold;
-            font-size: 16px;
+            font-size: 14px;
         }
         
         .banco-data {
-            font-size: 12px;
+            font-size: 11px;
             color: #666;
         }
         
         .total-banco {
             background: linear-gradient(135deg, var(--warning-color), #f3722c);
             color: white;
-            padding: 15px;
-            border-radius: 10px;
+            padding: 12px;
+            border-radius: 8px;
             text-align: center;
-            margin-top: 15px;
+            margin-top: 12px;
             font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .banco-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        
+        .banco-action-btn {
+            flex: 1;
+            min-width: 120px;
         }
 
-        /* Responsive */
+        /* UPLOAD DE FOTO */
+        .photo-upload-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .photo-preview {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f0f0f0;
+        }
+        
+        .photo-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .logo-upload-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .logo-preview {
+            width: 150px;
+            height: 80px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f0f0f0;
+        }
+        
+        .logo-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 10px;
+        }
+
+        /* RESPONSIVIDADE AVANÇADA */
+        @media (max-width: 1200px) {
+            .container { margin: 0 10px; }
+            .content-area { padding: 20px; }
+            .app-header { padding: 0 20px; }
+        }
+        
         @media (max-width: 1024px) {
             .container { flex-direction: column; }
             .sidebar { width: 100%; padding: 15px; }
-            .menu { flex-direction: row; flex-wrap: wrap; }
-            .menu-item { flex: 1; justify-content: center; }
+            .menu { flex-direction: row; flex-wrap: wrap; gap: 5px; }
+            .menu-item { flex: 1; min-width: 140px; justify-content: center; }
+            .main-content { flex-direction: column; }
         }
+        
         @media (max-width: 768px) {
-            .app-header { flex-direction: column; height: auto; padding: 20px; gap: 15px; }
-            .dashboard-grid, .cards-grid { grid-template-columns: 1fr; }
+            body { padding: 10px; }
+            .app-header { flex-direction: column; height: auto; padding: 15px; gap: 12px; }
+            .logo-text h1 { font-size: 20px; }
+            .employee-selector select { max-width: 150px; }
+            .current-date { width: 100%; text-align: center; }
+            .section-header { flex-direction: column; align-items: flex-start; }
+            .section-title h2 { font-size: 22px; }
+            .dashboard-grid { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+            .stat-card { padding: 15px; }
+            .stat-value { font-size: 24px; }
+            .cards-grid { grid-template-columns: 1fr; }
+            .card { padding: 18px; }
+            .table-wrapper { margin: 15px 0; }
+            .table th, .table td { padding: 12px 10px; }
+            .time-input { width: 80px; padding: 6px; }
+            .btn { padding: 8px 14px; font-size: 13px; }
+            .modal { padding: 20px; max-width: 95%; }
+        }
+        
+        @media (max-width: 480px) {
+            .app-header { padding: 12px; }
+            .logo-text h1 { font-size: 18px; }
+            .logo-text p { font-size: 11px; }
+            .logo-icon { width: 40px; height: 40px; }
+            .logo-icon i { font-size: 20px; }
+            .employee-selector select { max-width: 130px; padding: 6px 10px; }
+            .current-date h3 { font-size: 14px; }
+            .current-date p { font-size: 12px; }
+            .section-title h2 { font-size: 20px; }
+            .stat-value { font-size: 22px; }
+            .stat-label { font-size: 11px; }
+            .form-control { padding: 10px 12px; }
+            .banco-action-btn { min-width: 100%; }
+            .btn-group { flex-direction: column; }
+            .btn-group .btn { width: 100%; }
+        }
+        
+        @media (max-width: 360px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+            .menu-item { min-width: 100%; }
+            .time-input { width: 70px; }
         }
     </style>
 </head>
 <body>
-    <div style="position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;" id="toastContainer"></div>
+    <div style="position: fixed; top: 15px; right: 15px; z-index: 9999; display: flex; flex-direction: column; gap: 8px;" id="toastContainer"></div>
 
     <div class="container">
         <header class="app-header">
             <div class="logo">
-                <div class="logo-icon"><i class="fas fa-clock"></i></div>
+                <div class="logo-icon" id="companyLogoContainer">
+                    <i class="fas fa-building" id="companyLogoIcon"></i>
+                    <img id="companyLogoImg" style="display: none;" alt="Logo da Empresa">
+                </div>
                 <div class="logo-text">
-                    <h1>Ponto Enterprise</h1>
+                    <h1 id="companyNameHeader">Ponto Enterprise</h1>
                     <p>Gestão CLT Inteligente</p>
                 </div>
             </div>
             
-            <div style="display: flex; align-items: center; gap: 20px;">
+            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
                 <div class="employee-selector">
                     <select id="headerFuncionarioSelect" onchange="trocarFuncionario(this.value)">
                     </select>
@@ -226,10 +349,13 @@
         <div class="main-content">
             <aside class="sidebar">
                 <div class="user-profile">
-                    <div class="user-avatar"><i class="fas fa-user"></i></div>
+                    <div class="user-avatar" id="userAvatarContainer">
+                        <i class="fas fa-user" id="userAvatarIcon"></i>
+                        <img id="userAvatarImg" style="display: none;" alt="Foto do Funcionário">
+                    </div>
                     <div class="user-info">
-                        <h3 id="sidebarNome">Funcionário</h3>
-                        <p id="sidebarCargo">Cargo</p>
+                        <h3 id="sidebarNome" style="font-size: 16px;">Funcionário</h3>
+                        <p id="sidebarCargo" style="font-size: 13px;">Cargo</p>
                         <div class="user-badge">Ativo</div>
                     </div>
                 </div>
@@ -238,7 +364,7 @@
                     <a href="#" class="menu-item active" onclick="navegar('ponto', this)"><i class="fas fa-calendar-check"></i> Registro</a>
                     <a href="#" class="menu-item" onclick="navegar('feriados', this)"><i class="fas fa-calendar-star"></i> Dias Especiais</a>
                     <a href="#" class="menu-item" onclick="navegar('funcionarios', this)"><i class="fas fa-users"></i> Funcionários</a>
-                    <a href="#" class="menu-item" onclick="navegar('banco-horas', this)"><i class="fas fa-coins"></i> Banco de Horas</a>
+                    <a href="#" class="menu-item" onclick="navegar('banco-horas', this)"><i class="fas fa-exchange-alt"></i> Banco de Horas</a>
                     <a href="#" class="menu-item" onclick="navegar('importacao', this)"><i class="fas fa-file-excel"></i> Importar Excel</a>
                     <a href="#" class="menu-item" onclick="navegar('relatorios', this)"><i class="fas fa-chart-pie"></i> Relatórios</a>
                     <a href="#" class="menu-item" onclick="navegar('config', this)"><i class="fas fa-cog"></i> Configurações</a>
@@ -253,9 +379,9 @@
                             <i class="fas fa-calendar-alt"></i>
                             <h2>Registro de Ponto</h2>
                         </div>
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <select id="selectMes" class="form-control" style="width: auto; margin:0;"></select>
-                            <select id="selectAno" class="form-control" style="width: auto; margin:0;"></select>
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <select id="selectMes" class="form-control" style="width: auto; margin:0; min-width: 120px;"></select>
+                            <select id="selectAno" class="form-control" style="width: auto; margin:0; min-width: 100px;"></select>
                             <button class="btn btn-success" onclick="salvarPontoAtual()"><i class="fas fa-save"></i> Salvar</button>
                         </div>
                     </div>
@@ -306,73 +432,76 @@
                             <h2>Dias Especiais (Feriados e Atestados)</h2>
                         </div>
                     </div>
-                    <div class="card" style="margin-bottom: 30px;">
-                        <h3>Cadastrar Feriado / Folga</h3>
-                        <p style="margin-bottom: 20px; color: #666;">Os dias cadastrados aqui terão cálculo diferenciado (100% hora extra se trabalhados). Adicione apenas dias que não sejam Domingos (o sistema já identifica domingos automaticamente).</p>
-                        <div style="display: flex; gap: 15px; align-items: flex-end;">
-                            <div style="flex: 1;">
-                                <label>Data do Feriado</label>
-                                <input type="date" id="inputFeriadoData" class="form-control" style="margin-bottom: 0;">
+                    <div class="cards-grid">
+                        <div class="card">
+                            <h3>Cadastrar Feriado / Folga</h3>
+                            <p style="margin-bottom: 15px; color: #666; font-size: 13px;">Os dias cadastrados aqui terão cálculo diferenciado (100% hora extra se trabalhados).</p>
+                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <div>
+                                    <label>Data do Feriado</label>
+                                    <input type="date" id="inputFeriadoData" class="form-control" style="margin-bottom: 0;">
+                                </div>
+                                <div>
+                                    <label>Descrição</label>
+                                    <input type="text" id="inputFeriadoDesc" class="form-control" placeholder="Ex: Natal, Ano Novo" style="margin-bottom: 0;">
+                                </div>
+                                <button class="btn btn-special" onclick="App.adicionarFeriado()"><i class="fas fa-plus"></i> Adicionar</button>
                             </div>
-                            <div style="flex: 2;">
-                                <label>Descrição</label>
-                                <input type="text" id="inputFeriadoDesc" class="form-control" placeholder="Ex: Natal, Ano Novo" style="margin-bottom: 0;">
+                            <div style="margin-top: 20px;">
+                                <h4>Feriados Cadastrados</h4>
+                                <div class="tag-list" id="listaFeriados"></div>
                             </div>
-                            <button class="btn btn-special" onclick="App.adicionarFeriado()"><i class="fas fa-plus"></i> Adicionar</button>
                         </div>
-                        <div style="margin-top: 30px;">
-                            <h4>Feriados Cadastrados</h4>
-                            <div class="tag-list" id="listaFeriados"></div>
-                        </div>
-                    </div>
-                    <div class="card">
-                        <h3>Cadastrar Atestado Médico</h3>
-                        <p style="margin-bottom: 20px; color: #666;">Abonará as horas da jornada normal nos dias e período informados.</p>
-                        <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
-                            <div style="flex: 1 1 150px;">
-                                <label>Data de Início</label>
-                                <input type="date" id="inputAtestadoData" class="form-control" style="margin-bottom: 0;">
+                        
+                        <div class="card">
+                            <h3>Cadastrar Atestado Médico</h3>
+                            <p style="margin-bottom: 15px; color: #666; font-size: 13px;">Abonará as horas da jornada normal nos dias e período informados.</p>
+                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                <div>
+                                    <label>Data de Início</label>
+                                    <input type="date" id="inputAtestadoData" class="form-control" style="margin-bottom: 0;">
+                                </div>
+                                <div>
+                                    <label>Qtd. Dias</label>
+                                    <input type="number" id="inputAtestadoDias" class="form-control" value="1" min="1" style="margin-bottom: 0;">
+                                </div>
+                                <div>
+                                    <label>Horas/Dia (h)</label>
+                                    <input type="number" id="inputAtestadoHoras" class="form-control" value="8" min="1" max="24" style="margin-bottom: 0;">
+                                </div>
+                                <button class="btn btn-warning" onclick="App.adicionarAtestado()"><i class="fas fa-notes-medical"></i> Adicionar Atestado</button>
                             </div>
-                            <div style="flex: 1 1 100px;">
-                                <label>Qtd. Dias</label>
-                                <input type="number" id="inputAtestadoDias" class="form-control" value="1" min="1" style="margin-bottom: 0;">
+                            <div style="margin-top: 20px;">
+                                <h4>Atestados Cadastrados</h4>
+                                <div class="tag-list" id="listaAtestados"></div>
                             </div>
-                            <div style="flex: 1 1 100px;">
-                                <label>Horas/Dia (h)</label>
-                                <input type="number" id="inputAtestadoHoras" class="form-control" value="8" min="1" max="24" style="margin-bottom: 0;">
-                            </div>
-                            <button class="btn btn-warning" onclick="App.adicionarAtestado()" style="flex: 1 1 150px;"><i class="fas fa-notes-medical"></i> Adicionar Atestado</button>
-                        </div>
-                        <div style="margin-top: 30px;">
-                            <h4>Atestados Cadastrados</h4>
-                            <div class="tag-list" id="listaAtestados"></div>
                         </div>
                     </div>
                 </section>
 
-                <!-- NOVA SEÇÃO: BANCO DE HORAS -->
+                <!-- NOVA SEÇÃO: BANCO DE HORAS BIDIRECIONAL -->
                 <section id="banco-horas" class="content-section">
                     <div class="section-header">
                         <div class="section-title">
-                            <i class="fas fa-coins" style="background: linear-gradient(135deg, var(--warning-color), #f3722c);"></i>
-                            <h2>Banco de Horas (Folga Abonada)</h2>
+                            <i class="fas fa-exchange-alt" style="background: linear-gradient(135deg, var(--warning-color), #f3722c);"></i>
+                            <h2>Banco de Horas Bidirecional</h2>
                         </div>
                     </div>
                     
                     <div class="cards-grid">
                         <div class="card banco-horas-card">
-                            <h3><i class="fas fa-plus-circle"></i> Adicionar Horas do Banco</h3>
-                            <p style="margin-bottom: 20px; color: #666;">Registre horas extras que foram pagas com folga para abater do saldo.</p>
+                            <h3><i class="fas fa-plus-circle"></i> Adicionar Saldo ao Banco</h3>
+                            <p style="margin-bottom: 15px; color: #666; font-size: 13px;">Converta horas extras positivas em crédito no banco de horas.</p>
                             
                             <div class="form-group">
                                 <label>Data da Folga (quando o funcionário folgou)</label>
-                                <input type="date" id="bancoDataFolga" class="form-control">
+                                <input type="date" id="bancoDataFolga" class="form-control" value="">
                             </div>
                             
                             <div class="form-group">
                                 <label>Quantidade de Horas</label>
-                                <input type="number" id="bancoHoras" class="form-control" min="0.5" max="24" step="0.5" placeholder="Ex: 8.0">
-                                <small style="color: #666;">Digite o valor em horas (ex: 8.5 = 8 horas e 30 minutos)</small>
+                                <input type="number" id="bancoHoras" class="form-control" min="0.5" max="24" step="0.5" placeholder="Ex: 8.0" value="8">
+                                <small style="color: #666; font-size: 11px;">Digite o valor em horas (ex: 8.5 = 8 horas e 30 minutos)</small>
                             </div>
                             
                             <div class="form-group">
@@ -387,36 +516,82 @@
                                     <option value="feriado">Feriado Trabalhado (100%)</option>
                                     <option value="noturno">Adicional Noturno (20%)</option>
                                     <option value="extra">Hora Extra Normal (50%)</option>
+                                    <option value="saldo_positivo">Saldo Positivo do Mês</option>
                                     <option value="outro">Outro</option>
                                 </select>
                             </div>
                             
-                            <button class="btn btn-warning" onclick="App.adicionarBancoHoras()" style="width: 100%;">
-                                <i class="fas fa-save"></i> Registrar Horas do Banco
-                            </button>
+                            <div class="banco-actions">
+                                <button class="btn btn-success banco-action-btn" onclick="App.adicionarBancoHoras('entrada')">
+                                    <i class="fas fa-plus"></i> Adicionar ao Banco
+                                </button>
+                                
+                                <button class="btn btn-warning banco-action-btn" onclick="App.adicionarBancoHoras('saida')">
+                                    <i class="fas fa-minus"></i> Usar do Banco
+                                </button>
+                            </div>
                         </div>
                         
                         <div class="card">
-                            <h3><i class="fas fa-list"></i> Histórico do Banco de Horas</h3>
-                            <p style="margin-bottom: 20px; color: #666;">Horas registradas que serão abatidas do saldo total.</p>
+                            <h3><i class="fas fa-history"></i> Histórico do Banco de Horas</h3>
+                            <p style="margin-bottom: 15px; color: #666; font-size: 13px;">Registros de entradas e saídas do banco de horas.</p>
                             
                             <div id="listaBancoHoras">
                                 <!-- Itens serão inseridos aqui via JavaScript -->
                             </div>
                             
                             <div class="total-banco" id="totalBancoHoras">
-                                Total em Banco: 0 horas
+                                Saldo Atual: 0 horas
                             </div>
                             
-                            <div style="margin-top: 20px;">
-                                <button class="btn btn-primary" onclick="App.gerarReciboBancoHoras()" style="width: 100%; margin-bottom: 10px;">
-                                    <i class="fas fa-file-pdf"></i> Gerar Recibo de Banco de Horas
+                            <div class="banco-actions">
+                                <button class="btn btn-primary banco-action-btn" onclick="App.adicionarSaldoPositivo()">
+                                    <i class="fas fa-calculator"></i> Usar Saldo Positivo
                                 </button>
                                 
-                                <button class="btn btn-danger" onclick="App.limparBancoHoras()" style="width: 100%;">
-                                    <i class="fas fa-trash"></i> Limpar Todas as Horas do Banco
+                                <button class="btn btn-special banco-action-btn" onclick="App.gerarReciboBancoHoras()">
+                                    <i class="fas fa-file-pdf"></i> Gerar Recibo
                                 </button>
                             </div>
+                            
+                            <div class="banco-actions">
+                                <button class="btn btn-danger" onclick="App.limparBancoHoras()" style="width: 100%; margin-top: 10px;">
+                                    <i class="fas fa-trash"></i> Limpar Histórico
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <h3><i class="fas fa-balance-scale"></i> Compensação Automática</h3>
+                            <p style="margin-bottom: 15px; color: #666; font-size: 13px;">Configurar uso automático do banco de horas.</p>
+                            
+                            <div class="form-group">
+                                <label>Usar banco automaticamente para:</label>
+                                <div style="margin: 10px 0;">
+                                    <label style="display: block; margin-bottom: 8px;">
+                                        <input type="checkbox" id="autoCompensarNegativo" checked> Compensar saldo negativo
+                                    </label>
+                                    <label style="display: block; margin-bottom: 8px;">
+                                        <input type="checkbox" id="autoConverterPositivo"> Converter saldo positivo em banco
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Saldo Atual do Mês</label>
+                                <div style="text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 15px;">
+                                    <div style="font-size: 24px; font-weight: bold; color: var(--primary-color);" id="saldoAtualDisplay">0h 00m</div>
+                                    <div style="font-size: 12px; color: #666;">Horas extras do mês atual</div>
+                                </div>
+                            </div>
+                            
+                            <button class="btn btn-warning" onclick="App.compensarSaldoNegativo()" style="width: 100%; margin-bottom: 10px;">
+                                <i class="fas fa-sync-alt"></i> Compensar Saldo Negativo
+                            </button>
+                            
+                            <button class="btn btn-success" onclick="App.converterSaldoPositivo()" style="width: 100%;">
+                                <i class="fas fa-exchange-alt"></i> Converter para Banco
+                            </button>
                         </div>
                     </div>
                 </section>
@@ -441,19 +616,36 @@
                         </div>
                     </div>
 
-                    <div class="card">
-                        <h3>Importar de Excel (.xlsx ou .csv)</h3>
-                        <p style="margin-bottom: 20px; color: #666;">
-                            O sistema identifica dias automaticamente. <br>
-                            <strong>Regras aplicadas:</strong><br>
-                            - Domingos/Feriados trabalhados = 100% Extra.<br>
-                            - Sábados após 13:00 = Extra.
-                        </p>
+                    <div class="cards-grid">
+                        <div class="card">
+                            <h3><i class="fas fa-file-excel"></i> Importar de Excel</h3>
+                            <p style="margin-bottom: 15px; color: #666; font-size: 13px;">
+                                O sistema identifica dias automaticamente.<br>
+                                <strong>Regras aplicadas:</strong><br>
+                                - Domingos/Feriados trabalhados = 100% Extra.<br>
+                                - Sábados após 13:00 = Extra.
+                            </p>
+                            
+                            <div class="upload-zone" onclick="abrirModalImportacao()">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <h4>Clique para iniciar a importação</h4>
+                                <p>Selecione o mês de referência antes de enviar o arquivo.</p>
+                            </div>
+                        </div>
                         
-                        <div class="upload-zone" onclick="abrirModalImportacao()">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                            <h4>Clique para iniciar a importação</h4>
-                            <p>Você selecionará o mês de referência antes de enviar o arquivo.</p>
+                        <div class="card">
+                            <h3><i class="fas fa-info-circle"></i> Formato do Arquivo</h3>
+                            <p style="margin-bottom: 15px; color: #666; font-size: 13px;">Seu arquivo Excel deve conter as colunas:</p>
+                            <ul style="color: #666; font-size: 13px; padding-left: 20px; margin-bottom: 15px;">
+                                <li>Data (ou Dia do Mês)</li>
+                                <li>Entrada 1</li>
+                                <li>Saída 1</li>
+                                <li>Entrada 2</li>
+                                <li>Saída 2</li>
+                            </ul>
+                            <button class="btn btn-dark" onclick="App.baixarModeloExcel()" style="width: 100%;">
+                                <i class="fas fa-download"></i> Baixar Modelo
+                            </button>
                         </div>
                     </div>
                 </section>
@@ -468,23 +660,23 @@
 
                     <div class="cards-grid">
                         <div class="card">
-                            <h3><i class="fas fa-print"></i> Relatório PDF Moderno</h3>
-                            <p style="margin: 10px 0;">Gera documento oficial com cálculo de saldo, assinaturas e destaque para feriados e finais de semana.</p>
-                            <button class="btn btn-danger" onclick="gerarPDFModerno()" style="width: 100%; margin-top: 15px;">
-                                <i class="fas fa-file-pdf"></i> Baixar PDF
+                            <h3><i class="fas fa-print"></i> Relatório PDF Completo</h3>
+                            <p style="margin: 10px 0; font-size: 13px;">Gera documento oficial com cálculo de saldo, banco de horas, assinaturas e fotos.</p>
+                            <button class="btn btn-danger" onclick="gerarPDFModerno()" style="width: 100%; margin-top: 10px;">
+                                <i class="fas fa-file-pdf"></i> Baixar PDF Completo
                             </button>
                         </div>
                         <div class="card">
                             <h3><i class="fas fa-file-excel"></i> Exportar Dados</h3>
-                            <p style="margin: 10px 0;">Baixe a tabela atual em formato CSV para backup.</p>
-                            <button class="btn btn-success" onclick="exportarTabelaExcel()" style="width: 100%; margin-top: 15px;">
+                            <p style="margin: 10px 0; font-size: 13px;">Baixe a tabela atual em formato CSV para backup.</p>
+                            <button class="btn btn-success" onclick="exportarTabelaExcel()" style="width: 100%; margin-top: 10px;">
                                 <i class="fas fa-download"></i> Baixar Excel
                             </button>
                         </div>
                         <div class="card">
                             <h3><i class="fas fa-receipt"></i> Recibo Banco de Horas</h3>
-                            <p style="margin: 10px 0;">Gere recibo específico para horas pagas com folga.</p>
-                            <button class="btn btn-warning" onclick="App.gerarReciboBancoHoras()" style="width: 100%; margin-top: 15px;">
+                            <p style="margin: 10px 0; font-size: 13px;">Gere recibo específico para horas pagas com folga.</p>
+                            <button class="btn btn-warning" onclick="App.gerarReciboBancoHoras()" style="width: 100%; margin-top: 10px;">
                                 <i class="fas fa-file-invoice"></i> Gerar Recibo
                             </button>
                         </div>
@@ -514,12 +706,40 @@
                                 <label>Endereço</label>
                                 <input type="text" class="form-control" id="confEmpresaEndereco" value="PRUDENTE DE MORAIS, NATAL/RN">
                             </div>
-                            <button class="btn btn-primary" onclick="salvarConfigEmpresa()">Salvar Dados</button>
+                            
+                            <div class="logo-upload-container">
+                                <div class="logo-preview" id="logoPreview">
+                                    <i class="fas fa-building" id="logoPreviewIcon"></i>
+                                    <img id="logoPreviewImg" style="display: none;" alt="Logo da Empresa">
+                                </div>
+                                <button class="btn btn-primary" onclick="document.getElementById('logoUpload').click()">
+                                    <i class="fas fa-upload"></i> Alterar Logo
+                                </button>
+                                <input type="file" id="logoUpload" hidden accept="image/*" onchange="App.carregarLogoEmpresa(this)">
+                            </div>
+                            
+                            <button class="btn btn-primary" onclick="salvarConfigEmpresa()" style="margin-top: 15px; width: 100%;">Salvar Dados</button>
+                        </div>
+
+                        <div class="card">
+                            <h3><i class="fas fa-user-cog"></i> Foto do Funcionário</h3>
+                            <p style="margin: 10px 0; color: #666; font-size: 13px;">A foto aparecerá no sidebar e nos relatórios PDF.</p>
+                            
+                            <div class="photo-upload-container">
+                                <div class="photo-preview" id="photoPreview">
+                                    <i class="fas fa-user" id="photoPreviewIcon"></i>
+                                    <img id="photoPreviewImg" style="display: none;" alt="Foto do Funcionário">
+                                </div>
+                                <button class="btn btn-primary" onclick="document.getElementById('photoUpload').click()">
+                                    <i class="fas fa-camera"></i> Alterar Foto
+                                </button>
+                                <input type="file" id="photoUpload" hidden accept="image/*" onchange="App.carregarFotoFuncionario(this)">
+                            </div>
                         </div>
 
                         <div class="card" style="border-top: 4px solid var(--warning-color);">
                             <h3><i class="fas fa-tools"></i> Manutenção do Sistema</h3>
-                            <p style="margin: 10px 0; color: #666;">Ferramentas de backup e limpeza de dados.</p>
+                            <p style="margin: 10px 0; color: #666; font-size: 13px;">Ferramentas de backup e limpeza de dados.</p>
                             
                             <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
                                 <button class="btn btn-dark" onclick="App.exportarBackup()">
@@ -534,7 +754,7 @@
                                 <hr style="margin: 10px 0; border: 0; border-top: 1px solid #eee;">
                                 
                                 <button class="btn btn-danger" onclick="App.limparSistema()">
-                                    <i class="fas fa-trash-alt"></i> Resetar Sistema (Apagar Tudo)
+                                    <i class="fas fa-trash-alt"></i> Resetar Sistema
                                 </button>
                             </div>
                         </div>
@@ -609,15 +829,19 @@
                 empresa: {
                     nome: "EXCELENCIA LINGERIE LTDA",
                     cnpj: "38.035.900/0007-32",
-                    endereco: "PRUDENTE DE MORAIS, NATAL/RN"
+                    endereco: "PRUDENTE DE MORAIS, NATAL/RN",
+                    logo: null
                 },
                 funcionarios: [], 
                 registros: {},    
                 feriados: [], 
                 atestados: [],
-                bancoHoras: [], // NOVO: Array para armazenar horas do banco
+                bancoHoras: [],
+                fotosFuncionarios: {}, // Novo: armazenar fotos base64
                 config: {
-                    funcionarioAtualId: null
+                    funcionarioAtualId: null,
+                    autoCompensarNegativo: true,
+                    autoConverterPositivo: false
                 }
             },
             
@@ -641,15 +865,23 @@
                 this.setupDates();
                 this.renderAll();
                 this.setupClock();
+                this.atualizarSaldoDisplay();
+                
+                // Carregar logo da empresa se existir
+                if (this.data.empresa.logo) {
+                    this.atualizarLogoEmpresa();
+                }
+                
+                // Carregar foto do funcionário atual se existir
+                this.atualizarFotoFuncionario();
             },
 
-            // --- Gerenciamento de Dados ---
             saveToStorage: function() {
-                localStorage.setItem('ponto_app_data_v3', JSON.stringify(this.data)); // Atualizado para v3
+                localStorage.setItem('ponto_app_data_v4', JSON.stringify(this.data));
             },
 
             loadFromStorage: function() {
-                const raw = localStorage.getItem('ponto_app_data_v3') || localStorage.getItem('ponto_app_data_v2');
+                const raw = localStorage.getItem('ponto_app_data_v4') || localStorage.getItem('ponto_app_data_v3') || localStorage.getItem('ponto_app_data_v2');
                 if (raw) {
                     const parsed = JSON.parse(raw);
                     this.data.empresa = parsed.empresa || this.data.empresa;
@@ -657,46 +889,305 @@
                     this.data.registros = parsed.registros || {};
                     this.data.feriados = parsed.feriados || [];
                     this.data.atestados = parsed.atestados || [];
-                    this.data.bancoHoras = parsed.bancoHoras || []; // NOVO
+                    this.data.bancoHoras = parsed.bancoHoras || [];
+                    this.data.fotosFuncionarios = parsed.fotosFuncionarios || {};
                     this.data.config = parsed.config || {};
                 }
             },
 
-            // --- NOVO: BANCO DE HORAS ---
-            adicionarBancoHoras: function() {
+            // --- UPLOAD DE FOTOS E LOGO ---
+            carregarFotoFuncionario: function(input) {
+                if (!input.files || !input.files[0]) return;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const funcionarioId = this.data.config.funcionarioAtualId;
+                    this.data.fotosFuncionarios[funcionarioId] = e.target.result;
+                    this.saveToStorage();
+                    this.atualizarFotoFuncionario();
+                    showToast('Foto atualizada com sucesso!', 'success');
+                };
+                reader.readAsDataURL(input.files[0]);
+            },
+
+            carregarLogoEmpresa: function(input) {
+                if (!input.files || !input.files[0]) return;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.data.empresa.logo = e.target.result;
+                    this.saveToStorage();
+                    this.atualizarLogoEmpresa();
+                    showToast('Logo da empresa atualizada!', 'success');
+                };
+                reader.readAsDataURL(input.files[0]);
+            },
+
+            atualizarFotoFuncionario: function() {
+                const funcionarioId = this.data.config.funcionarioAtualId;
+                const foto = this.data.fotosFuncionarios[funcionarioId];
+                
+                const avatarImg = document.getElementById('userAvatarImg');
+                const avatarIcon = document.getElementById('userAvatarIcon');
+                const previewImg = document.getElementById('photoPreviewImg');
+                const previewIcon = document.getElementById('photoPreviewIcon');
+                
+                if (foto) {
+                    avatarImg.src = foto;
+                    avatarImg.style.display = 'block';
+                    avatarIcon.style.display = 'none';
+                    
+                    previewImg.src = foto;
+                    previewImg.style.display = 'block';
+                    previewIcon.style.display = 'none';
+                } else {
+                    avatarImg.style.display = 'none';
+                    avatarIcon.style.display = 'block';
+                    
+                    previewImg.style.display = 'none';
+                    previewIcon.style.display = 'block';
+                }
+            },
+
+            atualizarLogoEmpresa: function() {
+                if (this.data.empresa.logo) {
+                    const logoImg = document.getElementById('companyLogoImg');
+                    const logoIcon = document.getElementById('companyLogoIcon');
+                    const previewImg = document.getElementById('logoPreviewImg');
+                    const previewIcon = document.getElementById('logoPreviewIcon');
+                    
+                    logoImg.src = this.data.empresa.logo;
+                    logoImg.style.display = 'block';
+                    logoIcon.style.display = 'none';
+                    
+                    previewImg.src = this.data.empresa.logo;
+                    previewImg.style.display = 'block';
+                    previewIcon.style.display = 'none';
+                }
+            },
+
+            // --- BANCO DE HORAS BIDIRECIONAL ---
+            adicionarBancoHoras: function(tipo) {
                 const dataFolga = document.getElementById('bancoDataFolga').value;
-                const horas = parseFloat(document.getElementById('bancoHoras').value);
+                let horas = parseFloat(document.getElementById('bancoHoras').value);
                 const descricao = document.getElementById('bancoDescricao').value;
-                const tipo = document.getElementById('bancoTipo').value;
+                const tipoRegistro = document.getElementById('bancoTipo').value;
 
                 if (!dataFolga || !horas || horas <= 0 || !descricao) {
                     showToast('Preencha todos os campos corretamente', 'error');
                     return;
                 }
 
+                // Se for saída, converter para negativo
+                if (tipo === 'saida') {
+                    horas = -Math.abs(horas);
+                }
+
                 const novoRegistro = {
-                    id: 'banco_' + Date.now(),
+                    id: 'banco_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
                     dataFolga: dataFolga,
                     horas: horas,
-                    horasEmMinutos: Math.round(horas * 60), // Converte para minutos
+                    horasEmMinutos: Math.round(horas * 60),
                     descricao: descricao,
-                    tipo: tipo,
+                    tipo: tipoRegistro,
+                    tipoMovimento: tipo, // 'entrada' ou 'saida'
                     dataRegistro: new Date().toISOString().split('T')[0],
-                    funcionarioId: this.data.config.funcionarioAtualId,
-                    abatido: false
+                    funcionarioId: this.data.config.funcionarioAtualId
                 };
 
                 this.data.bancoHoras.push(novoRegistro);
                 this.saveToStorage();
                 
-                // Limpar formulário
-                document.getElementById('bancoDataFolga').value = '';
-                document.getElementById('bancoHoras').value = '';
-                document.getElementById('bancoDescricao').value = '';
+                // Limpar apenas alguns campos
+                if (tipo === 'entrada') {
+                    document.getElementById('bancoDataFolga').value = '';
+                    document.getElementById('bancoDescricao').value = '';
+                }
                 
                 this.renderBancoHoras();
-                this.renderPonto(); // Atualiza a tabela de ponto
-                showToast(`Registradas ${horas}h no banco de horas!`, 'success');
+                this.renderPonto();
+                
+                const mensagem = tipo === 'entrada' ? 
+                    `Adicionadas ${Math.abs(horas)}h ao banco de horas!` : 
+                    `Utilizadas ${Math.abs(horas)}h do banco de horas!`;
+                
+                showToast(mensagem, 'success');
+            },
+
+            // Novo: Adicionar saldo positivo automaticamente
+            adicionarSaldoPositivo: function() {
+                const saldoAtual = this.calcularSaldoMensal();
+                
+                if (saldoAtual <= 0) {
+                    showToast('Não há saldo positivo para adicionar ao banco', 'warning');
+                    return;
+                }
+
+                const horas = saldoAtual / 60; // Converter minutos para horas
+                const hoje = new Date().toISOString().split('T')[0];
+                
+                const novoRegistro = {
+                    id: 'banco_' + Date.now(),
+                    dataFolga: hoje,
+                    horas: horas,
+                    horasEmMinutos: saldoAtual,
+                    descricao: 'Saldo positivo convertido automaticamente',
+                    tipo: 'saldo_positivo',
+                    tipoMovimento: 'entrada',
+                    dataRegistro: hoje,
+                    funcionarioId: this.data.config.funcionarioAtualId
+                };
+
+                this.data.bancoHoras.push(novoRegistro);
+                this.saveToStorage();
+                this.renderBancoHoras();
+                this.renderPonto();
+                
+                showToast(`${horas.toFixed(1)}h de saldo positivo adicionadas ao banco!`, 'success');
+            },
+
+            // Novo: Compensar saldo negativo automaticamente
+            compensarSaldoNegativo: function() {
+                const saldoAtual = this.calcularSaldoMensal();
+                
+                if (saldoAtual >= 0) {
+                    showToast('Não há saldo negativo para compensar', 'warning');
+                    return;
+                }
+
+                const saldoBanco = this.getSaldoBancoHoras();
+                
+                if (saldoBanco <= 0) {
+                    showToast('Não há horas disponíveis no banco para compensar', 'warning');
+                    return;
+                }
+
+                // Usar o menor valor entre saldo negativo e saldo do banco
+                const horasCompensar = Math.min(Math.abs(saldoAtual), saldoBanco);
+                const hoje = new Date().toISOString().split('T')[0];
+                
+                const novoRegistro = {
+                    id: 'banco_' + Date.now(),
+                    dataFolga: hoje,
+                    horas: -horasCompensar / 60,
+                    horasEmMinutos: -horasCompensar,
+                    descricao: 'Compensação automática de saldo negativo',
+                    tipo: 'compensacao_negativo',
+                    tipoMovimento: 'saida',
+                    dataRegistro: hoje,
+                    funcionarioId: this.data.config.funcionarioAtualId
+                };
+
+                this.data.bancoHoras.push(novoRegistro);
+                this.saveToStorage();
+                this.renderBancoHoras();
+                this.renderPonto();
+                
+                showToast(`${(horasCompensar/60).toFixed(1)}h usadas do banco para compensar saldo negativo!`, 'success');
+            },
+
+            // Novo: Converter saldo positivo em banco
+            converterSaldoPositivo: function() {
+                this.adicionarSaldoPositivo();
+            },
+
+            calcularSaldoMensal: function() {
+                const func = this.getFuncionarioAtual();
+                const diasNoMes = new Date(this.ui.anoAtual, this.ui.mesAtual + 1, 0).getDate();
+                const key = this.getKeyRegistro();
+                const registrosMes = this.data.registros[key] || {};
+                
+                let totalSaldo = 0;
+
+                for (let d = 1; d <= diasNoMes; d++) {
+                    const dataObj = new Date(this.ui.anoAtual, this.ui.mesAtual, d);
+                    const reg = registrosMes[d] || {};
+                    const calculo = this.calcularDia(reg, func.jornada, dataObj);
+                    totalSaldo += calculo.saldo;
+                }
+
+                return totalSaldo;
+            },
+
+            atualizarSaldoDisplay: function() {
+                const saldo = this.calcularSaldoMensal();
+                const display = document.getElementById('saldoAtualDisplay');
+                display.textContent = this.minToTime(saldo);
+                display.style.color = saldo >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+            },
+
+            getSaldoBancoHoras: function() {
+                const funcionarioId = this.data.config.funcionarioAtualId;
+                return this.data.bancoHoras
+                    .filter(item => item.funcionarioId === funcionarioId)
+                    .reduce((total, item) => total + item.horasEmMinutos, 0);
+            },
+
+            renderBancoHoras: function() {
+                const container = document.getElementById('listaBancoHoras');
+                container.innerHTML = '';
+
+                const funcionarioId = this.data.config.funcionarioAtualId;
+                const horasFuncionario = this.data.bancoHoras
+                    .filter(item => item.funcionarioId === funcionarioId)
+                    .sort((a, b) => new Date(b.dataRegistro) - new Date(a.dataRegistro));
+                
+                if (horasFuncionario.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; color: #666; padding: 15px; font-size: 13px;">Nenhum registro no banco de horas.</p>';
+                    this.atualizarTotalBanco();
+                    return;
+                }
+
+                horasFuncionario.forEach(item => {
+                    const dataFormatada = new Date(item.dataFolga).toLocaleDateString('pt-BR');
+                    const tipoMap = {
+                        'domingo': 'Domingo',
+                        'feriado': 'Feriado',
+                        'noturno': 'Noturno',
+                        'extra': 'Extra',
+                        'saldo_positivo': 'Saldo +',
+                        'compensacao_negativo': 'Compensação',
+                        'outro': 'Outro'
+                    };
+                    
+                    const classe = item.tipoMovimento === 'entrada' ? 'entrada' : 'saida';
+                    const sinal = item.horas > 0 ? '+' : '';
+                    const cor = item.horas > 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                    
+                    const html = `
+                        <div class="banco-item ${classe}">
+                            <div style="flex: 1;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div class="banco-valor" style="color: ${cor}">${sinal}${item.horas.toFixed(1)}h</div>
+                                    <div style="font-size: 11px; color: #888;">${tipoMap[item.tipo] || item.tipo}</div>
+                                </div>
+                                <div class="banco-data">${dataFormatada}</div>
+                                <div style="font-size: 12px; color: #555; margin-top: 3px;">${item.descricao}</div>
+                            </div>
+                            <div>
+                                <button class="btn btn-danger" style="padding: 4px 8px; font-size: 11px;" onclick="App.removerBancoHoras('${item.id}')">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    container.innerHTML += html;
+                });
+
+                this.atualizarTotalBanco();
+            },
+
+            atualizarTotalBanco: function() {
+                const saldo = this.getSaldoBancoHoras();
+                const totalElement = document.getElementById('totalBancoHoras');
+                
+                if (saldo >= 0) {
+                    totalElement.innerHTML = `Saldo Atual: <strong>${this.minToTime(saldo)}</strong>`;
+                    totalElement.style.background = 'linear-gradient(135deg, var(--success-color), #2a9d8f)';
+                } else {
+                    totalElement.innerHTML = `Saldo Atual: <strong>-${this.minToTime(Math.abs(saldo))}</strong>`;
+                    totalElement.style.background = 'linear-gradient(135deg, var(--danger-color), #d00000)';
+                }
             },
 
             removerBancoHoras: function(id) {
@@ -710,96 +1201,21 @@
             },
 
             limparBancoHoras: function() {
-                if (this.data.bancoHoras.length === 0) {
+                const funcionarioId = this.data.config.funcionarioAtualId;
+                const horasFuncionario = this.data.bancoHoras.filter(item => item.funcionarioId === funcionarioId);
+                
+                if (horasFuncionario.length === 0) {
                     showToast('Não há registros no banco de horas', 'info');
                     return;
                 }
 
-                if (confirm('Tem certeza que deseja limpar TODAS as horas do banco? Esta ação não pode ser desfeita.')) {
-                    this.data.bancoHoras = [];
+                if (confirm('Tem certeza que deseja limpar TODAS as horas do banco deste funcionário? Esta ação não pode ser desfeita.')) {
+                    this.data.bancoHoras = this.data.bancoHoras.filter(item => item.funcionarioId !== funcionarioId);
                     this.saveToStorage();
                     this.renderBancoHoras();
                     this.renderPonto();
                     showToast('Banco de horas limpo!', 'success');
                 }
-            },
-
-            renderBancoHoras: function() {
-                const container = document.getElementById('listaBancoHoras');
-                container.innerHTML = '';
-
-                const funcionarioId = this.data.config.funcionarioAtualId;
-                const horasFuncionario = this.data.bancoHoras.filter(item => item.funcionarioId === funcionarioId);
-                
-                if (horasFuncionario.length === 0) {
-                    container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Nenhuma hora registrada no banco.</p>';
-                    document.getElementById('totalBancoHoras').innerHTML = 'Total em Banco: 0 horas';
-                    return;
-                }
-
-                let totalHoras = 0;
-                
-                horasFuncionario.forEach(item => {
-                    totalHoras += item.horas;
-                    
-                    const dataFormatada = new Date(item.dataFolga).toLocaleDateString('pt-BR');
-                    const tipoMap = {
-                        'domingo': 'Domingo (100%)',
-                        'feriado': 'Feriado (100%)',
-                        'noturno': 'Noturno (20%)',
-                        'extra': 'Extra (50%)',
-                        'outro': 'Outro'
-                    };
-                    
-                    const html = `
-                        <div class="banco-item ${item.abatido ? 'abatido' : ''}">
-                            <div>
-                                <div class="banco-valor">${item.horas}h</div>
-                                <div class="banco-data">${dataFormatada} - ${tipoMap[item.tipo] || item.tipo}</div>
-                                <div style="font-size: 12px; color: #555;">${item.descricao}</div>
-                            </div>
-                            <div>
-                                <button class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;" onclick="App.removerBancoHoras('${item.id}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                    container.innerHTML += html;
-                });
-
-                document.getElementById('totalBancoHoras').innerHTML = `Total em Banco: ${totalHoras.toFixed(1)} horas`;
-            },
-
-            getTotalBancoHoras: function() {
-                const funcionarioId = this.data.config.funcionarioAtualId;
-                return this.data.bancoHoras
-                    .filter(item => item.funcionarioId === funcionarioId)
-                    .reduce((total, item) => total + item.horasEmMinutos, 0);
-            },
-
-            // Atualização do cálculo para considerar banco de horas
-            calcularDiaComBanco: function(reg, jornadaHoras, dataObj, bancoHorasTotal) {
-                const calculoOriginal = this.calcularDia(reg, jornadaHoras, dataObj);
-                
-                // Aplicar desconto do banco de horas se houver saldo positivo
-                if (bancoHorasTotal > 0 && calculoOriginal.saldo > 0) {
-                    const desconto = Math.min(calculoOriginal.saldo, bancoHorasTotal);
-                    const saldoAjustado = calculoOriginal.saldo - desconto;
-                    
-                    return {
-                        ...calculoOriginal,
-                        saldo: saldoAjustado,
-                        bancoUtilizado: desconto,
-                        saldoOriginal: calculoOriginal.saldo
-                    };
-                }
-                
-                return {
-                    ...calculoOriginal,
-                    bancoUtilizado: 0,
-                    saldoOriginal: calculoOriginal.saldo
-                };
             },
 
             // BACKUP E RESTAURAÇÃO
@@ -844,6 +1260,7 @@
             limparSistema: function() {
                 if (confirm('ATENÇÃO: Isso apagará TODOS os dados, funcionários e registros. Não há como desfazer.\n\nDeseja continuar?')) {
                     if(confirm('Tem certeza absoluta?')) {
+                        localStorage.removeItem('ponto_app_data_v4');
                         localStorage.removeItem('ponto_app_data_v3');
                         localStorage.removeItem('ponto_app_data_v2');
                         location.reload();
@@ -851,6 +1268,23 @@
                 }
             },
 
+            baixarModeloExcel: function() {
+                const data = [
+                    ['Dia', 'Entrada 1', 'Saída 1', 'Entrada 2', 'Saída 2'],
+                    [1, '08:00', '12:00', '13:00', '17:00'],
+                    [2, '08:00', '12:00', '13:00', '17:00'],
+                    [3, '08:00', '12:00', '13:00', '17:00']
+                ];
+                
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                XLSX.utils.book_append_sheet(wb, ws, "Ponto");
+                
+                XLSX.writeFile(wb, "modelo_importacao_ponto.xlsx");
+                showToast('Modelo baixado com sucesso!', 'success');
+            },
+
+            // OUTRAS FUNÇÕES EXISTENTES...
             addFuncionario: function(nome, cargo, codigo, jornada) {
                 const id = 'func_' + Date.now();
                 const novo = { id, nome, cargo, codigo, jornada };
@@ -868,7 +1302,6 @@
                 return `${this.data.config.funcionarioAtualId}_${this.ui.anoAtual}_${this.ui.mesAtual}`;
             },
 
-            // --- Cálculos de Tempo ---
             timeToMin: function(timeStr) {
                 if (!timeStr) return 0;
                 const [h, m] = timeStr.split(':').map(Number);
@@ -959,7 +1392,30 @@
                 };
             },
 
-            // NOVO: Gerar recibo de banco de horas
+            // Cálculo com banco de horas
+            calcularDiaComBanco: function(reg, jornadaHoras, dataObj, bancoDisponivel) {
+                const calculoOriginal = this.calcularDia(reg, jornadaHoras, dataObj);
+                
+                // Se houver saldo positivo e banco disponível para compensar
+                if (this.data.config.autoCompensarNegativo && bancoDisponivel > 0 && calculoOriginal.saldo > 0) {
+                    const desconto = Math.min(calculoOriginal.saldo, bancoDisponivel);
+                    const saldoAjustado = calculoOriginal.saldo - desconto;
+                    
+                    return {
+                        ...calculoOriginal,
+                        saldo: saldoAjustado,
+                        bancoUtilizado: desconto,
+                        saldoOriginal: calculoOriginal.saldo
+                    };
+                }
+                
+                return {
+                    ...calculoOriginal,
+                    bancoUtilizado: 0,
+                    saldoOriginal: calculoOriginal.saldo
+                };
+            },
+
             gerarReciboBancoHoras: function() {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF('p', 'mm', 'a4');
@@ -973,42 +1429,51 @@
                     return;
                 }
 
+                // Cabeçalho com logo
                 const azulPrincipal = [67, 97, 238];
                 const laranjaBanco = [248, 150, 30];
-
-                // Cabeçalho
-                doc.setFillColor(...laranjaBanco);
-                doc.rect(0, 0, 210, 40, 'F');
-                doc.setTextColor(255, 255, 255);
-                doc.setFontSize(22);
-                doc.setFont("helvetica", "bold");
-                doc.text("RECIBO DE BANCO DE HORAS", 105, 18, { align: "center" });
                 
-                doc.setFontSize(10);
+                // Adicionar logo da empresa se existir
+                if (this.data.empresa.logo) {
+                    try {
+                        doc.addImage(this.data.empresa.logo, 'JPEG', 20, 15, 30, 30);
+                    } catch(e) {
+                        console.log('Erro ao carregar logo:', e);
+                    }
+                }
+                
+                doc.setFillColor(...laranjaBanco);
+                doc.rect(0, 0, 210, 50, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(20);
+                doc.setFont("helvetica", "bold");
+                doc.text("RECIBO DE BANCO DE HORAS", 105, 25, { align: "center" });
+                
+                doc.setFontSize(9);
                 doc.setFont("helvetica", "normal");
-                doc.text(`${App.data.empresa.nome} | CNPJ: ${App.data.empresa.cnpj}`, 105, 26, { align: "center" });
-                doc.text(`Data de Emissão: ${new Date().toLocaleDateString('pt-BR')}`, 105, 32, { align: "center" });
+                doc.text(`${this.data.empresa.nome} | CNPJ: ${this.data.empresa.cnpj}`, 105, 32, { align: "center" });
+                doc.text(`Data de Emissão: ${new Date().toLocaleDateString('pt-BR')}`, 105, 38, { align: "center" });
 
                 // Informações do Funcionário
                 doc.setFillColor(245, 247, 250);
                 doc.setDrawColor(200, 200, 200);
-                doc.roundedRect(14, 45, 182, 25, 3, 3, 'FD');
+                doc.roundedRect(14, 50, 182, 25, 3, 3, 'FD');
 
                 doc.setTextColor(50, 50, 50);
                 doc.setFontSize(10);
                 doc.setFont("helvetica", "bold");
-                doc.text("FUNCIONÁRIO:", 20, 55);
-                doc.text("CARGO:", 120, 55);
-                doc.text("MATRÍCULA:", 20, 65);
-                doc.text("TOTAL EM BANCO:", 120, 65);
+                doc.text("FUNCIONÁRIO:", 20, 60);
+                doc.text("CARGO:", 120, 60);
+                doc.text("MATRÍCULA:", 20, 70);
+                doc.text("SALDO ATUAL:", 120, 70);
 
-                const totalHoras = horasFuncionario.reduce((total, item) => total + item.horas, 0);
+                const saldoAtual = this.getSaldoBancoHoras();
                 
                 doc.setFont("helvetica", "normal");
-                doc.text(func.nome.toUpperCase(), 50, 55);
-                doc.text(func.cargo.toUpperCase(), 140, 55);
-                doc.text(func.codigo, 50, 65);
-                doc.text(`${totalHoras.toFixed(1)} HORAS`, 140, 65);
+                doc.text(func.nome.toUpperCase(), 50, 60);
+                doc.text(func.cargo.toUpperCase(), 140, 60);
+                doc.text(func.codigo, 50, 70);
+                doc.text(`${(saldoAtual/60).toFixed(1)} HORAS`, 140, 70);
 
                 // Tabela de Horas
                 const bodyData = [];
@@ -1019,20 +1484,24 @@
                         'feriado': 'Feriado (100%)',
                         'noturno': 'Noturno (20%)',
                         'extra': 'Extra (50%)',
+                        'saldo_positivo': 'Saldo +',
+                        'compensacao_negativo': 'Compensação',
                         'outro': 'Outro'
                     };
+                    
+                    const sinal = item.horas > 0 ? '+' : '';
                     
                     bodyData.push([
                         dataFormatada,
                         tipoMap[item.tipo] || item.tipo,
                         item.descricao,
-                        `${item.horas}h`
+                        `${sinal}${item.horas.toFixed(1)}h`
                     ]);
                 });
 
                 doc.autoTable({
-                    startY: 75,
-                    head: [['Data da Folga', 'Tipo', 'Descrição', 'Horas']],
+                    startY: 80,
+                    head: [['Data', 'Tipo', 'Descrição', 'Horas']],
                     body: bodyData,
                     theme: 'grid',
                     headStyles: { fillColor: laranjaBanco, textColor: 255, fontStyle: 'bold', halign: 'center' },
@@ -1054,11 +1523,21 @@
                 
                 doc.setFont("helvetica", "normal");
                 doc.setFontSize(10);
-                const declaracao = `Declaro que as horas acima relacionadas foram trabalhadas em dias especiais (domingos, feriados ou período noturno) e serão compensadas com folga, conforme estabelecido no artigo 7º da CLT e convenção coletiva.`;
+                const declaracao = `Declaro que as horas acima relacionadas foram trabalhadas em conformidade com a CLT e serão compensadas conforme acordado.`;
                 
                 doc.text(declaracao, 20, finalY + 10, { maxWidth: 170 });
 
                 finalY += 30;
+
+                // Adicionar foto do funcionário se existir
+                const fotoFuncionario = this.data.fotosFuncionarios[funcionarioId];
+                if (fotoFuncionario) {
+                    try {
+                        doc.addImage(fotoFuncionario, 'JPEG', 20, finalY - 20, 20, 20);
+                    } catch(e) {
+                        console.log('Erro ao carregar foto:', e);
+                    }
+                }
 
                 // Assinaturas
                 doc.setDrawColor(0, 0, 0);
@@ -1079,7 +1558,7 @@
             },
 
             setupDates: function() {
-                const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julço', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+                const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
                 const selMes = document.getElementById('selectMes');
                 const selAno = document.getElementById('selectAno');
                 
@@ -1096,8 +1575,16 @@
 
                 populate(selMes, selAno);
 
-                selMes.onchange = (e) => { this.ui.mesAtual = parseInt(e.target.value); this.renderPonto(); };
-                selAno.onchange = (e) => { this.ui.anoAtual = parseInt(e.target.value); this.renderPonto(); };
+                selMes.onchange = (e) => { 
+                    this.ui.mesAtual = parseInt(e.target.value); 
+                    this.renderPonto(); 
+                    this.atualizarSaldoDisplay();
+                };
+                selAno.onchange = (e) => { 
+                    this.ui.anoAtual = parseInt(e.target.value); 
+                    this.renderPonto(); 
+                    this.atualizarSaldoDisplay();
+                };
             },
 
             renderAll: function() {
@@ -1107,8 +1594,12 @@
                 this.renderListaFuncionarios();
                 this.renderFeriados();
                 this.renderAtestados();
-                this.renderBancoHoras(); // NOVO
+                this.renderBancoHoras();
                 this.renderConfigEmpresa();
+                this.atualizarSaldoDisplay();
+                
+                // Atualizar nome da empresa no header
+                document.getElementById('companyNameHeader').textContent = this.data.empresa.nome;
             },
 
             renderHeaderFuncionario: function() {
@@ -1131,6 +1622,10 @@
                 document.getElementById('confEmpresaNome').value = this.data.empresa.nome;
                 document.getElementById('confEmpresaCnpj').value = this.data.empresa.cnpj;
                 document.getElementById('confEmpresaEndereco').value = this.data.empresa.endereco;
+                
+                // Checkboxes de configuração
+                document.getElementById('autoCompensarNegativo').checked = this.data.config.autoCompensarNegativo;
+                document.getElementById('autoConverterPositivo').checked = this.data.config.autoConverterPositivo;
             },
 
             renderPonto: function() {
@@ -1141,8 +1636,8 @@
                 const diasNoMes = new Date(this.ui.anoAtual, this.ui.mesAtual + 1, 0).getDate();
                 const key = this.getKeyRegistro();
                 const registrosMes = this.data.registros[key] || {};
-                const bancoHorasTotal = this.getTotalBancoHoras();
-                let bancoDisponivel = bancoHorasTotal;
+                const saldoBanco = this.getSaldoBancoHoras();
+                let bancoDisponivel = saldoBanco;
                 
                 for (let d = 1; d <= diasNoMes; d++) {
                     const dataObj = new Date(this.ui.anoAtual, this.ui.mesAtual, d);
@@ -1168,14 +1663,13 @@
                     if (isFeriado) rowClass = 'row-feriado';
                     if (isAtestadoDay) rowClass = 'row-atestado';
                     
-                    // Adiciona observação se houve desconto do banco
                     if (calculo.bancoUtilizado && calculo.bancoUtilizado > 0) {
                         const horasUtilizadas = this.minToTime(calculo.bancoUtilizado);
                         observacao = `Banco: -${horasUtilizadas}`;
                         bancoDisponivel -= calculo.bancoUtilizado;
                     }
 
-                    const diaExtraInfo = isFeriado ? '<i class="fas fa-star" style="font-size:10px; color:var(--special-color)"></i>' : isAtestadoDay ? '<i class="fas fa-notes-medical" style="font-size:10px; color:#1890ff"></i>' : '';
+                    const diaExtraInfo = isFeriado ? '<i class="fas fa-star" style="font-size:9px; color:var(--special-color)"></i>' : isAtestadoDay ? '<i class="fas fa-notes-medical" style="font-size:9px; color:#1890ff"></i>' : '';
 
                     const html = `
                         <tr class="${rowClass}" id="row-day-${d}">
@@ -1187,12 +1681,13 @@
                             <td><input type="time" class="time-input" onchange="App.updatePonto(${d}, 's2', this.value)" value="${reg.s2 || ''}"></td>
                             <td class="col-total">${this.minToTime(calculo.trabalhado)}</td>
                             <td class="col-saldo ${calculo.saldo >= 0 ? 'saldo-positivo' : 'saldo-negativo'}">${this.minToTime(calculo.saldo)}</td>
-                            <td style="font-size: 12px; color: #666;">${observacao}</td>
+                            <td style="font-size: 11px; color: #666;">${observacao}</td>
                         </tr>
                     `;
                     tbody.insertAdjacentHTML('beforeend', html);
                 }
                 this.updateDashboardTotals();
+                this.atualizarSaldoDisplay();
             },
 
             updatePonto: function(dia, campo, valor) {
@@ -1205,6 +1700,7 @@
                 
                 this.updateRowVisuals(dia);
                 this.updateDashboardTotals();
+                this.atualizarSaldoDisplay();
             },
 
             updateRowVisuals: function(dia) {
@@ -1215,9 +1711,9 @@
                 const dataObj = new Date(this.ui.anoAtual, this.ui.mesAtual, dia);
                 const key = this.getKeyRegistro();
                 const reg = this.data.registros[key][dia] || {};
-                const bancoHorasTotal = this.getTotalBancoHoras();
+                const saldoBanco = this.getSaldoBancoHoras();
                 
-                const calculo = this.calcularDiaComBanco(reg, func.jornada, dataObj, bancoHorasTotal);
+                const calculo = this.calcularDiaComBanco(reg, func.jornada, dataObj, saldoBanco);
                 
                 const colTotal = row.querySelector('.col-total');
                 const colSaldo = row.querySelector('.col-saldo');
@@ -1229,7 +1725,6 @@
                     colSaldo.className = `col-saldo ${calculo.saldo >= 0 ? 'saldo-positivo' : 'saldo-negativo'}`;
                 }
                 
-                // Atualizar observação
                 if(colObservacao) {
                     colObservacao.textContent = calculo.bancoUtilizado > 0 ? 
                         `Banco: -${this.minToTime(calculo.bancoUtilizado)}` : '';
@@ -1241,8 +1736,8 @@
                 const diasNoMes = new Date(this.ui.anoAtual, this.ui.mesAtual + 1, 0).getDate();
                 const key = this.getKeyRegistro();
                 const registrosMes = this.data.registros[key] || {};
-                const bancoHorasTotal = this.getTotalBancoHoras();
-                let bancoDisponivel = bancoHorasTotal;
+                const saldoBanco = this.getSaldoBancoHoras();
+                let bancoDisponivel = saldoBanco;
                 
                 let somaTrabalhada = 0;
                 let somaSaldo = 0;
@@ -1281,9 +1776,8 @@
                 elSaldo.textContent = this.minToTime(saldoFinal);
                 elSaldo.style.color = saldoFinal >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
                 
-                // Atualizar card do banco de horas
                 const elBanco = document.getElementById('resumoBancoHoras');
-                const bancoRestante = bancoHorasTotal - somaBancoUtilizado;
+                const bancoRestante = saldoBanco - somaBancoUtilizado;
                 elBanco.textContent = this.minToTime(bancoRestante);
                 elBanco.style.color = 'var(--warning-color)';
             },
@@ -1439,11 +1933,11 @@
                     const card = `
                         <div class="card" style="border-left: 5px solid ${f.id === this.data.config.funcionarioAtualId ? 'var(--success-color)' : 'var(--gray-color)'}">
                             <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <h3>${f.nome}</h3>
-                                ${f.id !== this.data.config.funcionarioAtualId ? `<button class="btn btn-danger" style="padding:5px 10px; font-size:12px;" onclick="App.removerFuncionario('${f.id}')"><i class="fas fa-trash"></i></button>` : '<span class="status-badge status-trabalhado">Ativo</span>'}
+                                <h3 style="font-size: 16px;">${f.nome}</h3>
+                                ${f.id !== this.data.config.funcionarioAtualId ? `<button class="btn btn-danger" style="padding:4px 8px; font-size:11px;" onclick="App.removerFuncionario('${f.id}')"><i class="fas fa-trash"></i></button>` : '<span class="status-badge status-trabalhado">Ativo</span>'}
                             </div>
-                            <p style="color:#666; margin-top:5px;">${f.cargo} | Matrícula: ${f.codigo}</p>
-                            <button class="btn btn-primary" style="width:100%; margin-top:15px;" onclick="trocarFuncionario('${f.id}')">Selecionar</button>
+                            <p style="color:#666; margin-top:5px; font-size: 13px;">${f.cargo} | Matrícula: ${f.codigo}</p>
+                            <button class="btn btn-primary" style="width:100%; margin-top:12px; padding: 8px;" onclick="trocarFuncionario('${f.id}')">Selecionar</button>
                         </div>
                     `;
                     container.innerHTML += card;
@@ -1451,8 +1945,19 @@
             },
 
             removerFuncionario: function(id) {
-                if (confirm('Tem certeza? Isso apagará o cadastro.')) {
+                if (confirm('Tem certeza? Isso apagará o cadastro e todos os registros deste funcionário.')) {
                     this.data.funcionarios = this.data.funcionarios.filter(f => f.id !== id);
+                    
+                    // Remover registros do funcionário
+                    Object.keys(this.data.registros).forEach(key => {
+                        if (key.startsWith(id + '_')) {
+                            delete this.data.registros[key];
+                        }
+                    });
+                    
+                    // Remover foto do funcionário
+                    delete this.data.fotosFuncionarios[id];
+                    
                     this.saveToStorage();
                     this.renderAll();
                     showToast('Funcionário removido', 'success');
@@ -1487,7 +1992,7 @@
             if(type === 'success') color = '#4cc9f0';
             if(type === 'error') color = '#f94144';
             
-            el.style.cssText = `background: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); border-left: 5px solid ${color}; font-weight: 500; animation: fadeIn 0.3s;`;
+            el.style.cssText = `background: white; padding: 12px 16px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); border-left: 5px solid ${color}; font-weight: 500; animation: fadeIn 0.3s; font-size: 14px;`;
             el.innerHTML = `<i class="fas fa-info-circle"></i> ${msg}`;
             document.getElementById('toastContainer').appendChild(el);
             setTimeout(() => el.remove(), 4000);
@@ -1524,7 +2029,7 @@
             const codigo = document.getElementById('funcCodigo').value;
             const jornada = document.getElementById('funcJornada').value;
 
-            if (!nome || !cargo) return showToast('Preencha os campos', 'error');
+            if (!nome || !cargo) return showToast('Preencha os campos obrigatórios', 'error');
 
             App.addFuncionario(nome, cargo, codigo, jornada);
             fecharModalFuncionario();
@@ -1536,8 +2041,11 @@
             App.data.empresa.nome = document.getElementById('confEmpresaNome').value;
             App.data.empresa.cnpj = document.getElementById('confEmpresaCnpj').value;
             App.data.empresa.endereco = document.getElementById('confEmpresaEndereco').value;
+            App.data.config.autoCompensarNegativo = document.getElementById('autoCompensarNegativo').checked;
+            App.data.config.autoConverterPositivo = document.getElementById('autoConverterPositivo').checked;
             App.saveToStorage();
-            showToast('Dados da empresa atualizados', 'success');
+            App.renderAll();
+            showToast('Configurações salvas com sucesso', 'success');
         }
 
         function salvarPontoAtual() {
@@ -1564,41 +2072,56 @@
             const doc = new jsPDF('p', 'mm', 'a4');
             const func = App.getFuncionarioAtual();
             const funcionarioId = App.data.config.funcionarioAtualId;
-            const bancoHorasTotal = App.getTotalBancoHoras();
+            const saldoBanco = App.getSaldoBancoHoras();
             
             const azulPrincipal = [67, 97, 238];
             const cinzaEscuro = [50, 50, 50];
 
+            // Logo da empresa
+            if (App.data.empresa.logo) {
+                try {
+                    doc.addImage(App.data.empresa.logo, 'JPEG', 20, 15, 30, 30);
+                } catch(e) {}
+            }
+
             doc.setFillColor(...azulPrincipal);
-            doc.rect(0, 0, 210, 40, 'F');
+            doc.rect(0, 0, 210, 50, 'F');
 
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(22);
             doc.setFont("helvetica", "bold");
-            doc.text("ESPELHO DE PONTO", 105, 18, { align: "center" });
+            doc.text("ESPELHO DE PONTO", 105, 25, { align: "center" });
             
             doc.setFontSize(10);
             doc.setFont("helvetica", "normal");
-            doc.text(`${App.data.empresa.nome} | CNPJ: ${App.data.empresa.cnpj}`, 105, 26, { align: "center" });
-            doc.text(`Período: ${document.getElementById('selectMes').options[document.getElementById('selectMes').selectedIndex].text}/${App.ui.anoAtual}`, 105, 32, { align: "center" });
+            doc.text(`${App.data.empresa.nome} | CNPJ: ${App.data.empresa.cnpj}`, 105, 32, { align: "center" });
+            doc.text(`Período: ${document.getElementById('selectMes').options[document.getElementById('selectMes').selectedIndex].text}/${App.ui.anoAtual}`, 105, 38, { align: "center" });
+
+            // Foto do funcionário
+            const fotoFuncionario = App.data.fotosFuncionarios[funcionarioId];
+            if (fotoFuncionario) {
+                try {
+                    doc.addImage(fotoFuncionario, 'JPEG', 160, 50, 20, 20);
+                } catch(e) {}
+            }
 
             doc.setFillColor(245, 247, 250);
             doc.setDrawColor(200, 200, 200);
-            doc.roundedRect(14, 45, 182, 25, 3, 3, 'FD');
+            doc.roundedRect(14, 55, 182, 25, 3, 3, 'FD');
 
             doc.setTextColor(...cinzaEscuro);
             doc.setFontSize(10);
             doc.setFont("helvetica", "bold");
-            doc.text("FUNCIONÁRIO:", 20, 55);
-            doc.text("CARGO:", 120, 55);
-            doc.text("MATRÍCULA:", 20, 65);
-            doc.text("JORNADA:", 120, 65);
+            doc.text("FUNCIONÁRIO:", 20, 65);
+            doc.text("CARGO:", 120, 65);
+            doc.text("MATRÍCULA:", 20, 75);
+            doc.text("JORNADA:", 120, 75);
 
             doc.setFont("helvetica", "normal");
-            doc.text(func.nome.toUpperCase(), 50, 55);
-            doc.text(func.cargo.toUpperCase(), 140, 55);
-            doc.text(func.codigo, 50, 65);
-            doc.text(`${func.jornada} HORAS`, 140, 65);
+            doc.text(func.nome.toUpperCase(), 50, 65);
+            doc.text(func.cargo.toUpperCase(), 140, 65);
+            doc.text(func.codigo, 50, 75);
+            doc.text(`${func.jornada} HORAS`, 140, 75);
 
             const bodyData = [];
             const key = App.getKeyRegistro();
@@ -1607,7 +2130,7 @@
             
             let totalTrabalhado = 0;
             let totalSaldo = 0;
-            let bancoDisponivel = bancoHorasTotal;
+            let bancoDisponivel = saldoBanco;
 
             for (let d = 1; d <= diasNoMes; d++) {
                 const dataObj = new Date(App.ui.anoAtual, App.ui.mesAtual, d);
@@ -1651,7 +2174,7 @@
 
                 let observacaoCell = '-';
                 if (calc.bancoUtilizado > 0) {
-                    observacaoCell = { content: `Banco: -${App.minToTime(calc.bancoUtilizado)}`, styles: { textColor: [248, 150, 30], fontSize: 9 } };
+                    observacaoCell = { content: `Banco: -${App.minToTime(calc.bancoUtilizado)}`, styles: { textColor: [248, 150, 30], fontSize: 8 } };
                 }
 
                 bodyData.push([
@@ -1668,7 +2191,7 @@
             }
 
             doc.autoTable({
-                startY: 75,
+                startY: 85,
                 head: [['Data', 'Dia', 'Ent. 1', 'Saí. 1', 'Ent. 2', 'Saí. 2', 'Total', 'Saldo', 'Observação']],
                 body: bodyData,
                 theme: 'grid',
@@ -1682,7 +2205,7 @@
                     5: { halign: 'center' },
                     6: { halign: 'center', fontStyle: 'bold' },
                     7: { halign: 'center', fontStyle: 'bold' },
-                    8: { halign: 'center', fontSize: 9 }
+                    8: { halign: 'center', fontSize: 8 }
                 },
                 alternateRowStyles: { fillColor: [248, 249, 252] },
             });
@@ -1693,9 +2216,8 @@
             const statusSaldo = saldoFinalEmMinutos >= 0 ? 'POSITIVO (Horas Extras)' : 'NEGATIVO (Horas a Compensar)';
             const corStatus = saldoFinalEmMinutos >= 0 ? [0, 150, 0] : [200, 50, 50];
 
-            // Informações do banco de horas
             const bancoRestante = bancoDisponivel;
-            const bancoUtilizado = bancoHorasTotal - bancoRestante;
+            const bancoUtilizado = saldoBanco - bancoRestante;
 
             doc.setFillColor(255, 248, 230);
             doc.rect(14, finalY, 182, 40, 'F');
@@ -1706,7 +2228,7 @@
             doc.text("BALANÇO GERAL DO PERÍODO", 20, finalY + 8);
             
             doc.setFont("helvetica", "normal");
-            doc.text(`TOTAL TRABALHADO (Abonado incluído): ${App.minToTime(totalTrabalhado)}`, 20, finalY + 15);
+            doc.text(`TOTAL TRABALHADO: ${App.minToTime(totalTrabalhado)}`, 20, finalY + 15);
             
             doc.text(`SALDO FINAL: ${App.minToTime(Math.abs(saldoFinalEmMinutos))}`, 120, finalY + 15);
             
@@ -1733,8 +2255,8 @@
             doc.setTextColor(150, 150, 150);
             doc.text("Gerado por Ponto Enterprise System - Com banco de horas CLT", 105, 290, { align: "center" });
 
-            doc.save(`Ponto_Banco_${func.nome.replace(/\s+/g, '_')}_${App.ui.mesAtual+1}_${App.ui.anoAtual}.pdf`);
-            showToast('PDF com banco de horas gerado!', 'success');
+            doc.save(`Ponto_Completo_${func.nome.replace(/\s+/g, '_')}_${App.ui.mesAtual+1}_${App.ui.anoAtual}.pdf`);
+            showToast('PDF completo gerado com sucesso!', 'success');
         }
 
         function exportarTabelaExcel() {
@@ -1742,8 +2264,8 @@
             const key = App.getKeyRegistro();
             const registrosMes = App.data.registros[key] || {};
             const diasNoMes = new Date(App.ui.anoAtual, App.ui.mesAtual + 1, 0).getDate();
-            const bancoHorasTotal = App.getTotalBancoHoras();
-            let bancoDisponivel = bancoHorasTotal;
+            const saldoBanco = App.getSaldoBancoHoras();
+            let bancoDisponivel = saldoBanco;
             
             let csv = "Data;Dia da Semana;Entrada 1;Saida 1;Entrada 2;Saida 2;Total Horas;Saldo;Observação\n";
             
@@ -1768,7 +2290,7 @@
             const link = document.createElement("a");
             const url = URL.createObjectURL(blob);
             link.setAttribute("href", url);
-            link.setAttribute("download", `ponto_banco_${func.nome}_${App.ui.mesAtual+1}.csv`);
+            link.setAttribute("download", `ponto_${func.nome}_${App.ui.mesAtual+1}.csv`);
             link.click();
         }
     </script>
