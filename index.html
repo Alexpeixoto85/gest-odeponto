@@ -143,6 +143,12 @@
         .tag { background: #f0f0f0; padding: 8px 12px; border-radius: 20px; font-size: 13px; display: flex; align-items: center; gap: 8px; border: 1px solid #ddd; }
         .tag i { cursor: pointer; color: var(--danger-color); }
 
+        /* Modal de Backup */
+        .backup-modal { background: white; border-radius: 20px; width: 100%; max-width: 450px; padding: 30px; position: relative; text-align: center; }
+        .backup-modal h3 { color: var(--primary-color); margin-bottom: 15px; }
+        .backup-modal p { color: #666; margin-bottom: 25px; line-height: 1.6; }
+        .backup-buttons { display: flex; gap: 15px; justify-content: center; }
+
         /* Responsive */
         @media (max-width: 1024px) {
             .container { flex-direction: column; }
@@ -153,11 +159,36 @@
         @media (max-width: 768px) {
             .app-header { flex-direction: column; height: auto; padding: 20px; gap: 15px; }
             .dashboard-grid, .cards-grid { grid-template-columns: 1fr; }
+            .backup-buttons { flex-direction: column; }
         }
     </style>
 </head>
 <body>
     <div style="position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;" id="toastContainer"></div>
+
+    <!-- Modal de Backup Automático -->
+    <div id="modalBackupAuto" class="modal-overlay" style="z-index: 2000;">
+        <div class="backup-modal">
+            <h3><i class="fas fa-clock"></i> Tempo de Inatividade</h3>
+            <p>Você está inativo há 1 minuto. Deseja continuar usando o sistema?</p>
+            <div class="backup-buttons">
+                <button class="btn btn-success" onclick="continuarSistema()"><i class="fas fa-play"></i> Sim, Continuar</button>
+                <button class="btn btn-danger" onclick="sairComBackup()"><i class="fas fa-power-off"></i> Não, Sair</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Fechamento -->
+    <div id="modalFechamento" class="modal-overlay" style="z-index: 2000;">
+        <div class="backup-modal">
+            <h3><i class="fas fa-exclamation-triangle"></i> Backup Necessário</h3>
+            <p>Antes de fechar o sistema, é necessário realizar o backup dos dados. O backup será feito automaticamente agora.</p>
+            <div class="backup-buttons">
+                <button class="btn btn-success" onclick="fecharComBackup()"><i class="fas fa-download"></i> Fazer Backup e Sair</button>
+                <button class="btn btn-warning" onclick="cancelarFechamento()"><i class="fas fa-times"></i> Cancelar</button>
+            </div>
+        </div>
+    </div>
 
     <div class="container">
         <header class="app-header">
@@ -362,6 +393,13 @@
                                 <i class="fas fa-download"></i> Baixar Excel
                             </button>
                         </div>
+                        <div class="card">
+                            <h3><i class="fas fa-money-bill-wave"></i> Recibo de Horas Extras</h3>
+                            <p style="margin: 10px 0;">Gera recibo formal para pagamento de horas extras com todos os detalhes.</p>
+                            <button class="btn btn-special" onclick="gerarReciboHorasExtras()" style="width: 100%; margin-top: 15px;">
+                                <i class="fas fa-file-invoice-dollar"></i> Gerar Recibo
+                            </button>
+                        </div>
                     </div>
                 </section>
 
@@ -457,7 +495,7 @@
             </div>
             <div class="form-group">
                 <label>Ano de Referência</label>
-                <select id="importAnoRef" class="form-control"></select>
+                                <select id="importAnoRef" class="form-control"></select>
             </div>
 
             <div class="upload-zone" onclick="document.getElementById('fileUpload').click()" style="padding: 20px; margin-top: 20px;">
@@ -487,14 +525,19 @@
                 registros: {},    
                 diasEspeciais: {}, // Alteração: Agora os dias especiais são por funcionário
                 config: {
-                    funcionarioAtualId: null
+                    funcionarioAtualId: null,
+                    backupAutoAtivo: true
                 }
             },
             
             ui: {
                 mesAtual: new Date().getMonth(),
                 anoAtual: new Date().getFullYear(),
-                arquivoParaImportar: null 
+                arquivoParaImportar: null,
+                ultimaAtividade: Date.now(),
+                tempoInatividade: 60000, // 1 minuto em milissegundos
+                monitorAtividade: null,
+                fechamentoBloqueado: false
             },
 
             init: function() {
@@ -511,6 +554,50 @@
                 this.setupDates();
                 this.renderAll();
                 this.setupClock();
+                this.iniciarMonitorAtividade();
+                this.configurarBloqueioFechamento();
+            },
+
+            // --- Monitor de Atividade ---
+            iniciarMonitorAtividade: function() {
+                const eventos = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+                eventos.forEach(evento => {
+                    document.addEventListener(evento, () => {
+                        this.ui.ultimaAtividade = Date.now();
+                        document.getElementById('modalBackupAuto').classList.remove('active');
+                    }, { passive: true });
+                });
+
+                this.ui.monitorAtividade = setInterval(() => {
+                    const tempoInativo = Date.now() - this.ui.ultimaAtividade;
+                    if (tempoInativo > this.ui.tempoInatividade && this.data.config.backupAutoAtivo) {
+                        document.getElementById('modalBackupAuto').classList.add('active');
+                    }
+                }, 1000);
+            },
+
+            configurarBloqueioFechamento: function() {
+                this.ui.fechamentoBloqueado = true;
+                window.addEventListener('beforeunload', (e) => {
+                    if (this.ui.fechamentoBloqueado) {
+                        e.preventDefault();
+                        e.returnValue = 'Antes de fechar, é necessário fazer backup dos dados.';
+                        mostrarModalFechamento();
+                    }
+                });
+            },
+
+            // --- Backup Automático ---
+            fazerBackupAutomatico: function() {
+                const dataStr = JSON.stringify(this.data, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'Backup_Automatico_PontoEnterprise.json';
+                a.click();
+                showToast('Backup automático realizado com sucesso!', 'success');
+                return true;
             },
 
             // --- Gerenciamento de Dados ---
@@ -638,6 +725,10 @@
                 return `${sign}${h}h ${m.toString().padStart(2, '0')}m`;
             },
 
+            minToDecimal: function(minutes) {
+                return (minutes / 60).toFixed(2);
+            },
+
             isFeriado: function(dateStr, funcId = null) {
                 const diasEspeciais = this.getDiasEspeciaisFuncionario(funcId || this.data.config.funcionarioAtualId);
                 return diasEspeciais.feriados.includes(dateStr);
@@ -712,7 +803,10 @@
                     saldo: saldo,
                     teveBatida: teveBatida,
                     isSpecial: isDomingo || isFeriado,
-                    isAtestadoDay: isAtestadoDay
+                    isAtestadoDay: isAtestadoDay,
+                    isDomingo: isDomingo,
+                    isFeriado: isFeriado,
+                    isSabado: isSabado
                 };
             },
 
@@ -951,7 +1045,7 @@
                 const novoAtestado = { dataInicio, dias, horasPorDia };
                 const diasEspeciais = this.getDiasEspeciaisFuncionario();
                 
-                const isDuplicate = diasEspeciais.atestados.some(a => a.dataInicio === dataInicio && a.dias === dias);
+                const isDuplicate = diasEspeciais.atestados.some(a => a.dataInicio === dataInicio && a.dias === dias && a.horasPorDia === horasPorDia);
 
                 if(!isDuplicate) {
                     diasEspeciais.atestados.push(novoAtestado);
@@ -1083,6 +1177,48 @@
                     document.getElementById('currentDate').textContent = now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
                     document.getElementById('currentTime').textContent = now.toLocaleTimeString('pt-BR');
                 }, 1000);
+            },
+
+            // --- Métodos para recibo de horas extras ---
+            calcularHorasExtrasMes: function() {
+                const func = this.getFuncionarioAtual();
+                const key = this.getKeyRegistro();
+                const registrosMes = this.data.registros[key] || {};
+                const diasNoMes = new Date(this.ui.anoAtual, this.ui.mesAtual + 1, 0).getDate();
+                
+                let horasExtrasNormais = 0; // 50%
+                let horasExtrasFeriado = 0; // 100%
+                let horasExtrasDomingo = 0; // 100%
+                
+                for (let d = 1; d <= diasNoMes; d++) {
+                    const dataObj = new Date(this.ui.anoAtual, this.ui.mesAtual, d);
+                    const reg = registrosMes[d] || {};
+                    const calculo = this.calcularDia(reg, func.jornada, dataObj);
+                    
+                    if (calculo.saldo > 0) {
+                        const y = dataObj.getFullYear();
+                        const m = (dataObj.getMonth() + 1).toString().padStart(2, '0');
+                        const dd = d.toString().padStart(2, '0');
+                        const dataFormatada = `${y}-${m}-${dd}`;
+                        
+                        if (calculo.isFeriado) {
+                            horasExtrasFeriado += calculo.saldo;
+                        } else if (calculo.isDomingo) {
+                            horasExtrasDomingo += calculo.saldo;
+                        } else if (calculo.isSabado && dataObj.getHours() >= 13) {
+                            horasExtrasNormais += calculo.saldo;
+                        } else {
+                            horasExtrasNormais += calculo.saldo;
+                        }
+                    }
+                }
+                
+                return {
+                    normais: horasExtrasNormais,
+                    feriado: horasExtrasFeriado,
+                    domingo: horasExtrasDomingo,
+                    total: horasExtrasNormais + horasExtrasFeriado + horasExtrasDomingo
+                };
             }
         };
 
@@ -1180,6 +1316,168 @@
             const mes = document.getElementById('importMesRef').value;
             const ano = document.getElementById('importAnoRef').value;
             App.processarImportacao(parseInt(mes), parseInt(ano));
+        }
+
+        // --- Funções de Backup Automático ---
+        function continuarSistema() {
+            document.getElementById('modalBackupAuto').classList.remove('active');
+            App.ui.ultimaAtividade = Date.now();
+            App.fazerBackupAutomatico();
+        }
+
+        function sairComBackup() {
+            App.fazerBackupAutomatico();
+            App.ui.fechamentoBloqueado = false;
+            setTimeout(() => {
+                window.close();
+                showToast('Sistema encerrado com backup realizado', 'success');
+            }, 1000);
+        }
+
+        function mostrarModalFechamento() {
+            document.getElementById('modalFechamento').classList.add('active');
+        }
+
+        function fecharComBackup() {
+            App.fazerBackupAutomatico();
+            App.ui.fechamentoBloqueado = false;
+            setTimeout(() => {
+                window.close();
+            }, 1000);
+        }
+
+        function cancelarFechamento() {
+            document.getElementById('modalFechamento').classList.remove('active');
+        }
+
+        // --- Funções para Recibo de Horas Extras ---
+        function gerarReciboHorasExtras() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const func = App.getFuncionarioAtual();
+            const horasExtras = App.calcularHorasExtrasMes();
+            
+            // Se não há horas extras, avisar
+            if (horasExtras.total <= 0) {
+                showToast('Não há horas extras para gerar recibo neste período', 'warning');
+                return;
+            }
+
+            // Cores
+            const verde = [76, 201, 240];
+            const azul = [67, 97, 238];
+            const cinza = [100, 100, 100];
+
+            // Cabeçalho
+            doc.setFillColor(...azul);
+            doc.rect(0, 0, 210, 35, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(20);
+            doc.setFont("helvetica", "bold");
+            doc.text("RECIBO DE PAGAMENTO DE HORAS EXTRAS", 105, 15, { align: "center" });
+            
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text(`${App.data.empresa.nome} | CNPJ: ${App.data.empresa.cnpj}`, 105, 23, { align: "center" });
+            doc.text("Documento Oficial para Fins de Pagamento", 105, 29, { align: "center" });
+
+            // Informações do Funcionário
+            doc.setFillColor(245, 247, 250);
+            doc.roundedRect(15, 40, 180, 25, 3, 3, 'F');
+            
+            doc.setTextColor(...cinza);
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.text("FUNCIONÁRIO:", 20, 50);
+            doc.text("CARGO:", 120, 50);
+            doc.text("MATRÍCULA:", 20, 60);
+            doc.text("PERÍODO:", 120, 60);
+
+            doc.setFont("helvetica", "normal");
+            doc.text(func.nome.toUpperCase(), 45, 50);
+            doc.text(func.cargo.toUpperCase(), 140, 50);
+            doc.text(func.codigo, 45, 60);
+            doc.text(`${document.getElementById('selectMes').options[document.getElementById('selectMes').selectedIndex].text}/${App.ui.anoAtual}`, 140, 60);
+
+            // Detalhes das Horas Extras
+            let yPos = 75;
+            
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text("DETALHAMENTO DAS HORAS EXTRAS", 105, yPos, { align: "center" });
+            
+            yPos += 15;
+            
+            // Tabela de horas extras
+            const tableData = [
+                ['Tipo de Hora Extra', 'Percentual', 'Quantidade (Horas)', 'Valor por Hora (R$)', 'Valor Total (R$)'],
+                ['Horas Extras Normais', '50%', App.minToDecimal(horasExtras.normais), 'A definir', 'A calcular'],
+                ['Horas Extras em Feriados', '100%', App.minToDecimal(horasExtras.feriado), 'A definir', 'A calcular'],
+                ['Horas Extras em Domingos', '100%', App.minToDecimal(horasExtras.domingo), 'A definir', 'A calcular'],
+                ['TOTAL GERAL', '', App.minToDecimal(horasExtras.total), '', '']
+            ];
+
+            doc.autoTable({
+                startY: yPos,
+                head: [tableData[0]],
+                body: tableData.slice(1),
+                theme: 'grid',
+                headStyles: { fillColor: azul, textColor: 255, fontStyle: 'bold', halign: 'center' },
+                bodyStyles: { halign: 'center' },
+                alternateRowStyles: { fillColor: [248, 249, 252] },
+                styles: { fontSize: 9, cellPadding: 5 },
+                columnStyles: {
+                    0: { cellWidth: 40 },
+                    1: { cellWidth: 30 },
+                    2: { cellWidth: 35 },
+                    3: { cellWidth: 40 },
+                    4: { cellWidth: 35 }
+                }
+            });
+
+            yPos = doc.lastAutoTable.finalY + 15;
+
+            // Observações
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.text("OBSERVAÇÕES:", 20, yPos);
+            
+            doc.setFont("helvetica", "normal");
+            const observacoes = [
+                "1. Este documento tem validade legal para fins de pagamento.",
+                "2. Os valores serão calculados conforme contrato de trabalho.",
+                "3. Horas extras em feriados e domingos têm acréscimo de 100%.",
+                "4. Horas extras normais têm acréscimo de 50%.",
+                "5. Para pagamento, apresentar este recibo ao departamento financeiro."
+            ];
+            
+            observacoes.forEach((obs, index) => {
+                doc.text(obs, 25, yPos + 7 + (index * 5));
+            });
+
+            yPos += 40;
+
+            // Assinaturas
+            doc.setDrawColor(0, 0, 0);
+            doc.line(30, yPos, 80, yPos);
+            doc.setFontSize(9);
+            doc.text("ASSINATURA DO FUNCIONÁRIO", 55, yPos + 5, { align: "center" });
+
+            doc.line(130, yPos, 180, yPos);
+            doc.text("ASSINATURA DO RESPONSÁVEL", 155, yPos + 5, { align: "center" });
+
+            yPos += 20;
+
+            // Rodapé
+            doc.setFontSize(8);
+            doc.setTextColor(150, 150, 150);
+            doc.text("Recibo gerado automaticamente por Ponto Enterprise System", 105, 285, { align: "center" });
+            doc.text(`Data de emissão: ${new Date().toLocaleDateString('pt-BR')}`, 105, 290, { align: "center" });
+
+            // Salvar
+            doc.save(`Recibo_Horas_Extras_${func.nome.replace(/\s+/g, '_')}_${App.ui.mesAtual+1}_${App.ui.anoAtual}.pdf`);
+            showToast('Recibo de horas extras gerado com sucesso!', 'success');
         }
 
         function gerarPDFModerno() {
