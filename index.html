@@ -255,7 +255,7 @@
                     <div class="section-header">
                         <div class="section-title">
                             <i class="fas fa-calendar-star" style="background: linear-gradient(135deg, var(--special-color), #a2d2ff);"></i>
-                            <h2>Dias Especiais (Feriados e Atestados)</h2>
+                            <h2>Dias Especiais (Feriados e Atestados) - <span id="currentFuncName">Funcionário</span></h2>
                         </div>
                     </div>
                     <div class="card" style="margin-bottom: 30px;">
@@ -485,8 +485,7 @@
                 },
                 funcionarios: [], 
                 registros: {},    
-                feriados: [], 
-                atestados: [],
+                diasEspeciais: {}, // Alteração: Agora os dias especiais são por funcionário
                 config: {
                     funcionarioAtualId: null
                 }
@@ -526,13 +525,39 @@
                     this.data.empresa = parsed.empresa || this.data.empresa;
                     this.data.funcionarios = parsed.funcionarios || [];
                     this.data.registros = parsed.registros || {};
-                    this.data.feriados = parsed.feriados || [];
-                    this.data.atestados = parsed.atestados || [];
+                    // Migração: se existirem os arrays antigos, convertemos para o novo formato
+                    if (parsed.feriados && !parsed.diasEspeciais) {
+                        this.data.diasEspeciais = {};
+                        // Converte feriados globais para o primeiro funcionário (se existir)
+                        if (this.data.funcionarios.length > 0) {
+                            const firstFuncId = this.data.funcionarios[0].id;
+                            this.data.diasEspeciais[firstFuncId] = {
+                                feriados: parsed.feriados || [],
+                                atestados: parsed.atestados || []
+                            };
+                        }
+                        // Remove os arrays antigos
+                        delete this.data.feriados;
+                        delete this.data.atestados;
+                    } else {
+                        this.data.diasEspeciais = parsed.diasEspeciais || {};
+                    }
                     this.data.config = parsed.config || {};
                 }
             },
 
-            // --- BACKUP E RESTAURAÇÃO (NOVO) ---
+            // Métodos auxiliares para dias especiais por funcionário
+            getDiasEspeciaisFuncionario: function(funcId = null) {
+                const id = funcId || this.data.config.funcionarioAtualId;
+                if (!id) return { feriados: [], atestados: [] };
+                
+                if (!this.data.diasEspeciais[id]) {
+                    this.data.diasEspeciais[id] = { feriados: [], atestados: [] };
+                }
+                return this.data.diasEspeciais[id];
+            },
+
+            // --- BACKUP E RESTAURAÇÃO ---
             exportarBackup: function() {
                 const dataStr = JSON.stringify(this.data, null, 2);
                 const blob = new Blob([dataStr], { type: 'application/json' });
@@ -613,13 +638,15 @@
                 return `${sign}${h}h ${m.toString().padStart(2, '0')}m`;
             },
 
-            isFeriado: function(dateStr) {
-                return this.data.feriados.includes(dateStr);
+            isFeriado: function(dateStr, funcId = null) {
+                const diasEspeciais = this.getDiasEspeciaisFuncionario(funcId || this.data.config.funcionarioAtualId);
+                return diasEspeciais.feriados.includes(dateStr);
             },
             
-            isAtestado: function(dateStr) {
+            isAtestado: function(dateStr, funcId = null) {
+                const diasEspeciais = this.getDiasEspeciaisFuncionario(funcId || this.data.config.funcionarioAtualId);
                 const checkDate = new Date(dateStr + 'T00:00:00'); 
-                for(const atest of this.data.atestados) {
+                for(const atest of diasEspeciais.atestados) {
                     const start = new Date(atest.dataInicio + 'T00:00:00');
                     const end = new Date(start);
                     end.setDate(start.getDate() + atest.dias - 1); 
@@ -630,7 +657,7 @@
                 return 0; 
             },
 
-            calcularDia: function(reg, jornadaHoras, dataObj) {
+            calcularDia: function(reg, jornadaHoras, dataObj, funcId = null) {
                 const y = dataObj.getFullYear();
                 const m = (dataObj.getMonth() + 1).toString().padStart(2, '0');
                 const d = dataObj.getDate().toString().padStart(2, '0');
@@ -639,8 +666,8 @@
                 const diaSemana = dataObj.getDay(); 
                 const isDomingo = diaSemana === 0;
                 const isSabado = diaSemana === 6;
-                const isFeriado = this.isFeriado(dataFormatada);
-                const minutosAbonados = this.isAtestado(dataFormatada); 
+                const isFeriado = this.isFeriado(dataFormatada, funcId);
+                const minutosAbonados = this.isAtestado(dataFormatada, funcId); 
                 const isAtestadoDay = minutosAbonados > 0; 
 
                 let trabalhado = 0;
@@ -719,6 +746,7 @@
                 this.renderFeriados();
                 this.renderAtestados();
                 this.renderConfigEmpresa();
+                this.updateCurrentFuncName();
             },
 
             renderHeaderFuncionario: function() {
@@ -737,14 +765,20 @@
                 }
             },
 
+            updateCurrentFuncName: function() {
+                const atual = this.getFuncionarioAtual();
+                if (atual) {
+                    document.getElementById('currentFuncName').textContent = atual.nome;
+                }
+            },
+
             renderConfigEmpresa: function() {
                 document.getElementById('confEmpresaNome').value = this.data.empresa.nome;
                 document.getElementById('confEmpresaCnpj').value = this.data.empresa.cnpj;
                 document.getElementById('confEmpresaEndereco').value = this.data.empresa.endereco;
             },
 
-            // --- CORREÇÃO DO BUG DO CURSOR ---
-            // Renderiza a tabela inteira (apenas ao mudar de mês ou funcionário)
+            // --- Renderização do Ponto ---
             renderPonto: function() {
                 const tbody = document.getElementById('tabelaPontoBody');
                 tbody.innerHTML = '';
@@ -795,7 +829,6 @@
                 this.updateDashboardTotals();
             },
 
-            // Nova função para atualizar apenas os cálculos, sem redesenhar a tabela
             updatePonto: function(dia, campo, valor) {
                 const key = this.getKeyRegistro();
                 if (!this.data.registros[key]) this.data.registros[key] = {};
@@ -804,7 +837,6 @@
                 this.data.registros[key][dia][campo] = valor;
                 this.saveToStorage();
                 
-                // Em vez de renderPonto(), atualizamos só a linha e o dashboard
                 this.updateRowVisuals(dia);
                 this.updateDashboardTotals();
             },
@@ -820,7 +852,6 @@
                 
                 const calculo = this.calcularDia(reg, func.jornada, dataObj);
                 
-                // Atualiza células de total e saldo
                 const colTotal = row.querySelector('.col-total');
                 const colSaldo = row.querySelector('.col-saldo');
                 
@@ -864,12 +895,12 @@
                 elSaldo.textContent = this.minToTime(somaSaldo);
                 elSaldo.style.color = somaSaldo >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
             },
-            // --- FIM CORREÇÃO ---
 
             renderFeriados: function() {
                 const list = document.getElementById('listaFeriados');
                 list.innerHTML = '';
-                this.data.feriados.sort().forEach(dateStr => {
+                const diasEspeciais = this.getDiasEspeciaisFuncionario();
+                diasEspeciais.feriados.sort().forEach(dateStr => {
                     const [y, m, d] = dateStr.split('-');
                     const display = `${d}/${m}/${y}`;
                     list.innerHTML += `<div class="tag">${display} <i class="fas fa-times" onclick="App.removerFeriado('${dateStr}')"></i></div>`;
@@ -880,8 +911,10 @@
                 const data = document.getElementById('inputFeriadoData').value;
                 if(!data) return showToast('Selecione uma data', 'error');
                 
-                if(!this.data.feriados.includes(data)) {
-                    this.data.feriados.push(data);
+                const diasEspeciais = this.getDiasEspeciaisFuncionario();
+                
+                if(!diasEspeciais.feriados.includes(data)) {
+                    diasEspeciais.feriados.push(data);
                     this.saveToStorage();
                     this.renderFeriados();
                     this.renderPonto();
@@ -890,7 +923,8 @@
             },
 
             removerFeriado: function(dateStr) {
-                this.data.feriados = this.data.feriados.filter(d => d !== dateStr);
+                const diasEspeciais = this.getDiasEspeciaisFuncionario();
+                diasEspeciais.feriados = diasEspeciais.feriados.filter(d => d !== dateStr);
                 this.saveToStorage();
                 this.renderFeriados();
                 this.renderPonto();
@@ -899,7 +933,8 @@
             renderAtestados: function() {
                 const list = document.getElementById('listaAtestados');
                 list.innerHTML = '';
-                this.data.atestados.sort((a, b) => new Date(a.dataInicio) - new Date(b.dataInicio)).forEach(atest => {
+                const diasEspeciais = this.getDiasEspeciaisFuncionario();
+                diasEspeciais.atestados.sort((a, b) => new Date(a.dataInicio) - new Date(b.dataInicio)).forEach(atest => {
                     const [y, m, d] = atest.dataInicio.split('-');
                     const display = `${d}/${m}/${y} | ${atest.dias} dias (${atest.horasPorDia}h/dia)`;
                     list.innerHTML += `<div class="tag" style="background:#e6f7ff;">${display} <i class="fas fa-times" onclick="App.removerAtestado('${atest.dataInicio}', ${atest.dias})"></i></div>`;
@@ -914,10 +949,12 @@
                 if(!dataInicio || dias <= 0 || horasPorDia <= 0) return showToast('Preencha os dados do atestado corretamente', 'error');
                 
                 const novoAtestado = { dataInicio, dias, horasPorDia };
-                const isDuplicate = this.data.atestados.some(a => a.dataInicio === dataInicio && a.dias === dias);
+                const diasEspeciais = this.getDiasEspeciaisFuncionario();
+                
+                const isDuplicate = diasEspeciais.atestados.some(a => a.dataInicio === dataInicio && a.dias === dias);
 
                 if(!isDuplicate) {
-                    this.data.atestados.push(novoAtestado);
+                    diasEspeciais.atestados.push(novoAtestado);
                     this.saveToStorage();
                     this.renderAtestados();
                     this.renderPonto(); 
@@ -928,7 +965,8 @@
             },
 
             removerAtestado: function(dataInicio, dias) {
-                this.data.atestados = this.data.atestados.filter(a => !(a.dataInicio === dataInicio && a.dias === dias));
+                const diasEspeciais = this.getDiasEspeciaisFuncionario();
+                diasEspeciais.atestados = diasEspeciais.atestados.filter(a => !(a.dataInicio === dataInicio && a.dias === dias));
                 this.saveToStorage();
                 this.renderAtestados();
                 this.renderPonto();
@@ -1029,8 +1067,10 @@
             },
 
             removerFuncionario: function(id) {
-                if (confirm('Tem certeza? Isso apagará o cadastro.')) {
+                if (confirm('Tem certeza? Isso apagará o cadastro e todos os dias especiais deste funcionário.')) {
                     this.data.funcionarios = this.data.funcionarios.filter(f => f.id !== id);
+                    // Remove também os dias especiais deste funcionário
+                    delete this.data.diasEspeciais[id];
                     this.saveToStorage();
                     this.renderAll();
                     showToast('Funcionário removido', 'success');
@@ -1057,6 +1097,11 @@
             document.getElementById(sectionId).classList.add('active');
             document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
             if(element) element.classList.add('active');
+            
+            // Atualiza o nome do funcionário atual na tela de dias especiais
+            if (sectionId === 'feriados') {
+                App.updateCurrentFuncName();
+            }
         }
 
         function showToast(msg, type = 'info') {
