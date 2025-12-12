@@ -108,10 +108,15 @@
         .saldo-negativo { color: var(--danger-color); font-weight: bold; }
 
         /* Dashboard */
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 25px; margin: 30px 0; }
-        .stat-card { background: white; padding: 25px; border-radius: var(--border-radius); box-shadow: var(--box-shadow); text-align: center; position: relative; }
-        .stat-value { font-size: 36px; font-weight: 700; margin: 10px 0; color: var(--dark-color); }
-        .stat-label { color: var(--gray-color); font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 30px 0; }
+        .stat-card { background: white; padding: 20px; border-radius: var(--border-radius); box-shadow: var(--box-shadow); text-align: center; position: relative; }
+        .stat-value { font-size: 28px; font-weight: 700; margin: 10px 0; color: var(--dark-color); }
+        .stat-label { color: var(--gray-color); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* Banco de Horas */
+        .banco-horas-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .banco-horas-card .stat-value { color: white; }
+        .banco-horas-card .stat-label { color: rgba(255,255,255,0.8); }
 
         /* Buttons & Forms */
         .btn { padding: 12px 24px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 15px; transition: var(--transition); display: inline-flex; align-items: center; gap: 10px; color: white; }
@@ -148,6 +153,11 @@
         .backup-modal h3 { color: var(--primary-color); margin-bottom: 15px; }
         .backup-modal p { color: #666; margin-bottom: 25px; line-height: 1.6; }
         .backup-buttons { display: flex; gap: 15px; justify-content: center; }
+
+        /* Empty State */
+        .empty-state { text-align: center; padding: 60px 20px; color: #666; }
+        .empty-state i { font-size: 60px; color: #ddd; margin-bottom: 20px; }
+        .empty-state h3 { margin-bottom: 10px; color: #444; }
 
         /* Responsive */
         @media (max-width: 1024px) {
@@ -203,6 +213,7 @@
             <div style="display: flex; align-items: center; gap: 20px;">
                 <div class="employee-selector">
                     <select id="headerFuncionarioSelect" onchange="trocarFuncionario(this.value)">
+                        <option value="">Selecione um funcionário</option>
                     </select>
                 </div>
                 <div class="current-date">
@@ -217,9 +228,9 @@
                 <div class="user-profile">
                     <div class="user-avatar"><i class="fas fa-user"></i></div>
                     <div class="user-info">
-                        <h3 id="sidebarNome">Funcionário</h3>
-                        <p id="sidebarCargo">Cargo</p>
-                        <div class="user-badge">Ativo</div>
+                        <h3 id="sidebarNome">Nenhum funcionário</h3>
+                        <p id="sidebarCargo">Selecione ou cadastre</p>
+                        <div class="user-badge" id="sidebarStatus">Inativo</div>
                     </div>
                 </div>
 
@@ -227,6 +238,7 @@
                     <a href="#" class="menu-item active" onclick="navegar('ponto', this)"><i class="fas fa-calendar-check"></i> Registro</a>
                     <a href="#" class="menu-item" onclick="navegar('feriados', this)"><i class="fas fa-calendar-star"></i> Dias Especiais</a>
                     <a href="#" class="menu-item" onclick="navegar('funcionarios', this)"><i class="fas fa-users"></i> Funcionários</a>
+                    <a href="#" class="menu-item" onclick="navegar('bancohoras', this)"><i class="fas fa-piggy-bank"></i> Banco de Horas</a>
                     <a href="#" class="menu-item" onclick="navegar('importacao', this)"><i class="fas fa-file-excel"></i> Importar Excel</a>
                     <a href="#" class="menu-item" onclick="navegar('relatorios', this)"><i class="fas fa-chart-pie"></i> Relatórios</a>
                     <a href="#" class="menu-item" onclick="navegar('config', this)"><i class="fas fa-cog"></i> Configurações</a>
@@ -248,37 +260,52 @@
                         </div>
                     </div>
 
-                    <div class="dashboard-grid">
-                        <div class="stat-card">
-                            <div class="stat-value" id="resumoTrabalhadas" style="color: var(--primary-color)">0h</div>
-                            <div class="stat-label">Trabalhadas/Abonadas</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value" id="resumoExtras" style="color: var(--success-color)">0h</div>
-                            <div class="stat-label">Extras (CLT)</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-value" id="resumoSaldo" style="color: var(--dark-color)">0h</div>
-                            <div class="stat-label">Saldo Mensal</div>
-                        </div>
+                    <div id="pontoEmptyState" class="empty-state" style="display: none;">
+                        <i class="fas fa-users"></i>
+                        <h3>Nenhum funcionário cadastrado</h3>
+                        <p>Para começar, cadastre um funcionário na seção "Funcionários".</p>
+                        <button class="btn btn-primary" onclick="navegar('funcionarios', document.querySelector('a[onclick*=\"funcionarios\"]'))">
+                            <i class="fas fa-user-plus"></i> Cadastrar Funcionário
+                        </button>
                     </div>
 
-                    <div class="table-wrapper">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Data</th>
-                                    <th>Semana</th>
-                                    <th>Entrada 1</th>
-                                    <th>Saída 1</th>
-                                    <th>Entrada 2</th>
-                                    <th>Saída 2</th>
-                                    <th>Total</th>
-                                    <th>Saldo</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabelaPontoBody"></tbody>
-                        </table>
+                    <div id="pontoContent">
+                        <div class="dashboard-grid">
+                            <div class="stat-card">
+                                <div class="stat-value" id="resumoTrabalhadas" style="color: var(--primary-color)">0h</div>
+                                <div class="stat-label">Trabalhadas/Abonadas</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="resumoExtras" style="color: var(--success-color)">0h</div>
+                                <div class="stat-label">Extras (CLT)</div>
+                            </div>
+                            <div class="stat-card banco-horas-card">
+                                <div class="stat-value" id="resumoBanco" style="color: white">0h</div>
+                                <div class="stat-label">Banco de Horas</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value" id="resumoSaldo" style="color: var(--dark-color)">0h</div>
+                                <div class="stat-label">Saldo Total</div>
+                            </div>
+                        </div>
+
+                        <div class="table-wrapper">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Semana</th>
+                                        <th>Entrada 1</th>
+                                        <th>Saída 1</th>
+                                        <th>Entrada 2</th>
+                                        <th>Saída 2</th>
+                                        <th>Total</th>
+                                        <th>Saldo Dia</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaPontoBody"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </section>
 
@@ -289,46 +316,58 @@
                             <h2>Dias Especiais (Feriados e Atestados) - <span id="currentFuncName">Funcionário</span></h2>
                         </div>
                     </div>
-                    <div class="card" style="margin-bottom: 30px;">
-                        <h3>Cadastrar Feriado / Folga</h3>
-                        <p style="margin-bottom: 20px; color: #666;">Os dias cadastrados aqui terão cálculo diferenciado (100% hora extra se trabalhados). Adicione apenas dias que não sejam Domingos (o sistema já identifica domingos automaticamente).</p>
-                        <div style="display: flex; gap: 15px; align-items: flex-end;">
-                            <div style="flex: 1;">
-                                <label>Data do Feriado</label>
-                                <input type="date" id="inputFeriadoData" class="form-control" style="margin-bottom: 0;">
-                            </div>
-                            <div style="flex: 2;">
-                                <label>Descrição</label>
-                                <input type="text" id="inputFeriadoDesc" class="form-control" placeholder="Ex: Natal, Ano Novo" style="margin-bottom: 0;">
-                            </div>
-                            <button class="btn btn-special" onclick="App.adicionarFeriado()"><i class="fas fa-plus"></i> Adicionar</button>
-                        </div>
-                        <div style="margin-top: 30px;">
-                            <h4>Feriados Cadastrados</h4>
-                            <div class="tag-list" id="listaFeriados"></div>
-                        </div>
+                    
+                    <div id="feriadosEmptyState" class="empty-state" style="display: none;">
+                        <i class="fas fa-user-slash"></i>
+                        <h3>Nenhum funcionário selecionado</h3>
+                        <p>Selecione ou cadastre um funcionário para gerenciar dias especiais.</p>
+                        <button class="btn btn-primary" onclick="navegar('funcionarios', document.querySelector('a[onclick*=\"funcionarios\"]'))">
+                            <i class="fas fa-user-plus"></i> Cadastrar Funcionário
+                        </button>
                     </div>
-                    <div class="card">
-                        <h3>Cadastrar Atestado Médico</h3>
-                        <p style="margin-bottom: 20px; color: #666;">Abonará as horas da jornada normal nos dias e período informados.</p>
-                        <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
-                            <div style="flex: 1 1 150px;">
-                                <label>Data de Início</label>
-                                <input type="date" id="inputAtestadoData" class="form-control" style="margin-bottom: 0;">
+                    
+                    <div id="feriadosContent">
+                        <div class="card" style="margin-bottom: 30px;">
+                            <h3>Cadastrar Feriado / Folga</h3>
+                            <p style="margin-bottom: 20px; color: #666;">Os dias cadastrados aqui terão cálculo diferenciado (100% hora extra se trabalhados). Adicione apenas dias que não sejam Domingos (o sistema já identifica domingos automaticamente).</p>
+                            <div style="display: flex; gap: 15px; align-items: flex-end;">
+                                <div style="flex: 1;">
+                                    <label>Data do Feriado</label>
+                                    <input type="date" id="inputFeriadoData" class="form-control" style="margin-bottom: 0;">
+                                </div>
+                                <div style="flex: 2;">
+                                    <label>Descrição</label>
+                                    <input type="text" id="inputFeriadoDesc" class="form-control" placeholder="Ex: Natal, Ano Novo" style="margin-bottom: 0;">
+                                </div>
+                                <button class="btn btn-special" onclick="App.adicionarFeriado()"><i class="fas fa-plus"></i> Adicionar</button>
                             </div>
-                            <div style="flex: 1 1 100px;">
-                                <label>Qtd. Dias</label>
-                                <input type="number" id="inputAtestadoDias" class="form-control" value="1" min="1" style="margin-bottom: 0;">
+                            <div style="margin-top: 30px;">
+                                <h4>Feriados Cadastrados</h4>
+                                <div class="tag-list" id="listaFeriados"></div>
                             </div>
-                            <div style="flex: 1 1 100px;">
-                                <label>Horas/Dia (h)</label>
-                                <input type="number" id="inputAtestadoHoras" class="form-control" value="8" min="1" max="24" style="margin-bottom: 0;">
-                            </div>
-                            <button class="btn btn-warning" onclick="App.adicionarAtestado()" style="flex: 1 1 150px;"><i class="fas fa-notes-medical"></i> Adicionar Atestado</button>
                         </div>
-                        <div style="margin-top: 30px;">
-                            <h4>Atestados Cadastrados</h4>
-                            <div class="tag-list" id="listaAtestados"></div>
+                        <div class="card">
+                            <h3>Cadastrar Atestado Médico</h3>
+                            <p style="margin-bottom: 20px; color: #666;">Abonará as horas da jornada normal nos dias e período informados.</p>
+                            <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                                <div style="flex: 1 1 150px;">
+                                    <label>Data de Início</label>
+                                    <input type="date" id="inputAtestadoData" class="form-control" style="margin-bottom: 0;">
+                                </div>
+                                <div style="flex: 1 1 100px;">
+                                    <label>Qtd. Dias</label>
+                                    <input type="number" id="inputAtestadoDias" class="form-control" value="1" min="1" style="margin-bottom: 0;">
+                                </div>
+                                <div style="flex: 1 1 100px;">
+                                    <label>Horas/Dia (h)</label>
+                                    <input type="number" id="inputAtestadoHoras" class="form-control" value="8" min="1" max="24" style="margin-bottom: 0;">
+                                </div>
+                                <button class="btn btn-warning" onclick="App.adicionarAtestado()" style="flex: 1 1 150px;"><i class="fas fa-notes-medical"></i> Adicionar Atestado</button>
+                            </div>
+                            <div style="margin-top: 30px;">
+                                <h4>Atestados Cadastrados</h4>
+                                <div class="tag-list" id="listaAtestados"></div>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -342,7 +381,66 @@
                         <button class="btn btn-primary" onclick="abrirModalFuncionario()"><i class="fas fa-plus"></i> Novo Funcionário</button>
                     </div>
 
+                    <div id="funcionariosEmptyState" class="empty-state" style="display: block;">
+                        <i class="fas fa-users"></i>
+                        <h3>Nenhum funcionário cadastrado</h3>
+                        <p>Adicione seu primeiro funcionário para começar a usar o sistema.</p>
+                        <button class="btn btn-primary" onclick="abrirModalFuncionario()">
+                            <i class="fas fa-user-plus"></i> Cadastrar Primeiro Funcionário
+                        </button>
+                    </div>
+
                     <div class="cards-grid" id="listaFuncionariosGrid"></div>
+                </section>
+
+                <section id="bancohoras" class="content-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <i class="fas fa-piggy-bank"></i>
+                            <h2>Banco de Horas</h2>
+                        </div>
+                    </div>
+
+                    <div id="bancohorasEmptyState" class="empty-state" style="display: none;">
+                        <i class="fas fa-user-slash"></i>
+                        <h3>Nenhum funcionário selecionado</h3>
+                        <p>Selecione ou cadastre um funcionário para visualizar o banco de horas.</p>
+                        <button class="btn btn-primary" onclick="navegar('funcionarios', document.querySelector('a[onclick*=\"funcionarios\"]'))">
+                            <i class="fas fa-user-plus"></i> Cadastrar Funcionário
+                        </button>
+                    </div>
+
+                    <div id="bancohorasContent">
+                        <div class="card">
+                            <h3><i class="fas fa-chart-line"></i> Histórico do Banco de Horas</h3>
+                            <p style="margin-bottom: 20px; color: #666;">Visualize o saldo acumulado mês a mês. O banco de horas acumula os saldos positivos e negativos de todos os meses.</p>
+                            
+                            <div class="table-wrapper">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Mês/Ano</th>
+                                            <th>Saldo do Mês</th>
+                                            <th>Banco Anterior</th>
+                                            <th>Banco Atualizado</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabelaBancoHorasBody"></tbody>
+                                </table>
+                            </div>
+                            
+                            <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                                <h4><i class="fas fa-info-circle"></i> Como funciona o Banco de Horas:</h4>
+                                <ul style="margin-top: 10px; color: #666; padding-left: 20px;">
+                                    <li>Saldo positivo: horas extras trabalhadas</li>
+                                    <li>Saldo negativo: horas a compensar</li>
+                                    <li>O banco acumula mês a mês automaticamente</li>
+                                    <li>Valores em vermelho indicam débito, verde crédito</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
                 </section>
 
                 <section id="importacao" class="content-section">
@@ -523,7 +621,8 @@
                 },
                 funcionarios: [], 
                 registros: {},    
-                diasEspeciais: {}, // Alteração: Agora os dias especiais são por funcionário
+                diasEspeciais: {},
+                bancoHoras: {}, // Novo: Banco de horas por funcionário
                 config: {
                     funcionarioAtualId: null,
                     backupAutoAtivo: true
@@ -543,19 +642,15 @@
             init: function() {
                 this.loadFromStorage();
                 
-                if (this.data.funcionarios.length === 0) {
-                    this.addFuncionario("Gislaine", "Vendedora", "008", 8);
-                }
-                
-                if (!this.data.config.funcionarioAtualId && this.data.funcionarios.length > 0) {
-                    this.data.config.funcionarioAtualId = this.data.funcionarios[0].id;
-                }
-
+                // Sistema inicia sem funcionários cadastrados
                 this.setupDates();
                 this.renderAll();
                 this.setupClock();
                 this.iniciarMonitorAtividade();
                 this.configurarBloqueioFechamento();
+                
+                // Verifica se há funcionários para mostrar estados vazios
+                this.checkEmptyStates();
             },
 
             // --- Monitor de Atividade ---
@@ -602,34 +697,63 @@
 
             // --- Gerenciamento de Dados ---
             saveToStorage: function() {
-                localStorage.setItem('ponto_app_data_v2', JSON.stringify(this.data));
+                localStorage.setItem('ponto_app_data_v3', JSON.stringify(this.data));
             },
 
             loadFromStorage: function() {
-                const raw = localStorage.getItem('ponto_app_data_v2');
+                const raw = localStorage.getItem('ponto_app_data_v3');
                 if (raw) {
                     const parsed = JSON.parse(raw);
                     this.data.empresa = parsed.empresa || this.data.empresa;
                     this.data.funcionarios = parsed.funcionarios || [];
                     this.data.registros = parsed.registros || {};
-                    // Migração: se existirem os arrays antigos, convertemos para o novo formato
-                    if (parsed.feriados && !parsed.diasEspeciais) {
-                        this.data.diasEspeciais = {};
-                        // Converte feriados globais para o primeiro funcionário (se existir)
-                        if (this.data.funcionarios.length > 0) {
-                            const firstFuncId = this.data.funcionarios[0].id;
-                            this.data.diasEspeciais[firstFuncId] = {
-                                feriados: parsed.feriados || [],
-                                atestados: parsed.atestados || []
-                            };
-                        }
-                        // Remove os arrays antigos
-                        delete this.data.feriados;
-                        delete this.data.atestados;
-                    } else {
-                        this.data.diasEspeciais = parsed.diasEspeciais || {};
-                    }
+                    this.data.diasEspeciais = parsed.diasEspeciais || {};
+                    this.data.bancoHoras = parsed.bancoHoras || {}; // Novo
                     this.data.config = parsed.config || {};
+                }
+            },
+
+            // --- Verificação de estados vazios ---
+            checkEmptyStates: function() {
+                const hasFuncionarios = this.data.funcionarios.length > 0;
+                const hasFuncionarioAtual = this.data.config.funcionarioAtualId && 
+                                           this.data.funcionarios.some(f => f.id === this.data.config.funcionarioAtualId);
+                
+                // Ponto
+                if (!hasFuncionarioAtual) {
+                    document.getElementById('pontoEmptyState').style.display = 'block';
+                    document.getElementById('pontoContent').style.display = 'none';
+                } else {
+                    document.getElementById('pontoEmptyState').style.display = 'none';
+                    document.getElementById('pontoContent').style.display = 'block';
+                }
+                
+                // Feriados
+                if (!hasFuncionarioAtual) {
+                    document.getElementById('feriadosEmptyState').style.display = 'block';
+                    document.getElementById('feriadosContent').style.display = 'none';
+                } else {
+                    document.getElementById('feriadosEmptyState').style.display = 'none';
+                    document.getElementById('feriadosContent').style.display = 'block';
+                }
+                
+                // Banco de Horas
+                if (!hasFuncionarioAtual) {
+                    document.getElementById('bancohorasEmptyState').style.display = 'block';
+                    document.getElementById('bancohorasContent').style.display = 'none';
+                } else {
+                    document.getElementById('bancohorasEmptyState').style.display = 'none';
+                    document.getElementById('bancohorasContent').style.display = 'block';
+                    this.renderBancoHoras(); // Renderiza o banco de horas
+                }
+                
+                // Funcionários
+                if (!hasFuncionarios) {
+                    document.getElementById('funcionariosEmptyState').style.display = 'block';
+                    document.getElementById('listaFuncionariosGrid').style.display = 'none';
+                } else {
+                    document.getElementById('funcionariosEmptyState').style.display = 'none';
+                    document.getElementById('listaFuncionariosGrid').style.display = 'grid';
                 }
             },
 
@@ -642,6 +766,63 @@
                     this.data.diasEspeciais[id] = { feriados: [], atestados: [] };
                 }
                 return this.data.diasEspeciais[id];
+            },
+
+            // --- BANCO DE HORAS ---
+            calcularBancoHorasFuncionario: function(funcId = null) {
+                const id = funcId || this.data.config.funcionarioAtualId;
+                if (!id) return 0;
+                
+                // Se já temos o banco calculado, retornamos
+                if (this.data.bancoHoras[id] !== undefined) {
+                    return this.data.bancoHoras[id];
+                }
+                
+                // Calcula o banco de horas somando todos os saldos mensais
+                let bancoTotal = 0;
+                const chavesRegistros = Object.keys(this.data.registros);
+                
+                for (const chave of chavesRegistros) {
+                    if (chave.startsWith(`${id}_`)) {
+                        const [_, ano, mes] = chave.split('_');
+                        const saldoMes = this.calcularSaldoMes(id, parseInt(ano), parseInt(mes));
+                        bancoTotal += saldoMes;
+                    }
+                }
+                
+                // Salva no cache
+                this.data.bancoHoras[id] = bancoTotal;
+                return bancoTotal;
+            },
+
+            calcularSaldoMes: function(funcId, ano, mes) {
+                const func = this.data.funcionarios.find(f => f.id === funcId);
+                if (!func) return 0;
+                
+                const key = `${funcId}_${ano}_${mes}`;
+                const registrosMes = this.data.registros[key] || {};
+                const diasNoMes = new Date(ano, mes + 1, 0).getDate();
+                
+                let saldoMes = 0;
+                
+                for (let d = 1; d <= diasNoMes; d++) {
+                    const dataObj = new Date(ano, mes, d);
+                    const reg = registrosMes[d] || {};
+                    const calculo = this.calcularDia(reg, func.jornada, dataObj, funcId);
+                    
+                    saldoMes += calculo.saldo;
+                }
+                
+                return saldoMes;
+            },
+
+            atualizarBancoHoras: function(funcId = null) {
+                const id = funcId || this.data.config.funcionarioAtualId;
+                if (!id) return;
+                
+                // Recalcula o banco de horas
+                this.data.bancoHoras[id] = this.calcularBancoHorasFuncionario(id);
+                this.saveToStorage();
             },
 
             // --- BACKUP E RESTAURAÇÃO ---
@@ -665,7 +846,7 @@
                     try {
                         const importedData = JSON.parse(e.target.result);
                         // Validação básica
-                        if (!importedData.funcionarios || !importedData.registros) {
+                        if (!importedData.funcionarios) {
                             throw new Error("Formato de arquivo inválido");
                         }
                         
@@ -687,7 +868,7 @@
             limparSistema: function() {
                 if (confirm('ATENÇÃO: Isso apagará TODOS os dados, funcionários e registros. Não há como desfazer.\n\nDeseja continuar?')) {
                     if(confirm('Tem certeza absoluta?')) {
-                        localStorage.removeItem('ponto_app_data_v2');
+                        localStorage.removeItem('ponto_app_data_v3');
                         location.reload();
                     }
                 }
@@ -699,11 +880,13 @@
                 this.data.funcionarios.push(novo);
                 this.data.config.funcionarioAtualId = id;
                 this.saveToStorage();
+                this.checkEmptyStates();
                 return id;
             },
 
             getFuncionarioAtual: function() {
-                return this.data.funcionarios.find(f => f.id === this.data.config.funcionarioAtualId) || this.data.funcionarios[0];
+                return this.data.funcionarios.find(f => f.id === this.data.config.funcionarioAtualId) || 
+                       (this.data.funcionarios.length > 0 ? this.data.funcionarios[0] : null);
             },
 
             getKeyRegistro: function() {
@@ -828,8 +1011,8 @@
 
                 populate(selMes, selAno);
 
-                selMes.onchange = (e) => { this.ui.mesAtual = parseInt(e.target.value); this.renderPonto(); };
-                selAno.onchange = (e) => { this.ui.anoAtual = parseInt(e.target.value); this.renderPonto(); };
+                selMes.onchange = (e) => { this.ui.mesAtual = parseInt(e.target.value); this.renderPonto(); this.renderBancoHoras(); };
+                selAno.onchange = (e) => { this.ui.anoAtual = parseInt(e.target.value); this.renderPonto(); this.renderBancoHoras(); };
             },
 
             renderAll: function() {
@@ -841,11 +1024,12 @@
                 this.renderAtestados();
                 this.renderConfigEmpresa();
                 this.updateCurrentFuncName();
+                this.renderBancoHoras();
             },
 
             renderHeaderFuncionario: function() {
                 const sel = document.getElementById('headerFuncionarioSelect');
-                sel.innerHTML = '';
+                sel.innerHTML = '<option value="">Selecione um funcionário</option>';
                 this.data.funcionarios.forEach(f => {
                     sel.innerHTML += `<option value="${f.id}" ${f.id === this.data.config.funcionarioAtualId ? 'selected' : ''}>${f.nome}</option>`;
                 });
@@ -856,6 +1040,13 @@
                 if (atual) {
                     document.getElementById('sidebarNome').textContent = atual.nome;
                     document.getElementById('sidebarCargo').textContent = atual.cargo;
+                    document.getElementById('sidebarStatus').textContent = 'Ativo';
+                    document.getElementById('sidebarStatus').style.background = 'var(--success-color)';
+                } else {
+                    document.getElementById('sidebarNome').textContent = 'Nenhum funcionário';
+                    document.getElementById('sidebarCargo').textContent = 'Selecione ou cadastre';
+                    document.getElementById('sidebarStatus').textContent = 'Inativo';
+                    document.getElementById('sidebarStatus').style.background = 'var(--gray-color)';
                 }
             },
 
@@ -863,6 +1054,8 @@
                 const atual = this.getFuncionarioAtual();
                 if (atual) {
                     document.getElementById('currentFuncName').textContent = atual.nome;
+                } else {
+                    document.getElementById('currentFuncName').textContent = 'Nenhum funcionário';
                 }
             },
 
@@ -878,6 +1071,11 @@
                 tbody.innerHTML = '';
                 
                 const func = this.getFuncionarioAtual();
+                if (!func) {
+                    this.checkEmptyStates();
+                    return;
+                }
+                
                 const diasNoMes = new Date(this.ui.anoAtual, this.ui.mesAtual + 1, 0).getDate();
                 const key = this.getKeyRegistro();
                 const registrosMes = this.data.registros[key] || {};
@@ -933,6 +1131,7 @@
                 
                 this.updateRowVisuals(dia);
                 this.updateDashboardTotals();
+                this.atualizarBancoHoras(); // Atualiza o banco de horas
             },
 
             updateRowVisuals: function(dia) {
@@ -958,12 +1157,14 @@
 
             updateDashboardTotals: function() {
                 const func = this.getFuncionarioAtual();
+                if (!func) return;
+                
                 const diasNoMes = new Date(this.ui.anoAtual, this.ui.mesAtual + 1, 0).getDate();
                 const key = this.getKeyRegistro();
                 const registrosMes = this.data.registros[key] || {};
                 
                 let somaTrabalhada = 0;
-                let somaSaldo = 0;
+                let somaSaldoMes = 0;
 
                 for (let d = 1; d <= diasNoMes; d++) {
                     const dataObj = new Date(this.ui.anoAtual, this.ui.mesAtual, d);
@@ -979,15 +1180,73 @@
 
                     if (calculo.teveBatida || calculo.isAtestadoDay || (!isDomingo && !isFeriado)) { 
                          somaTrabalhada += calculo.trabalhado;
-                         somaSaldo += calculo.saldo;
+                         somaSaldoMes += calculo.saldo;
                     }
                 }
 
+                // Calcula banco de horas
+                const bancoHoras = this.calcularBancoHorasFuncionario();
+                const saldoTotal = bancoHoras + somaSaldoMes;
+
                 document.getElementById('resumoTrabalhadas').textContent = this.minToTime(somaTrabalhada);
-                document.getElementById('resumoExtras').textContent = somaSaldo > 0 ? this.minToTime(somaSaldo) : '0h 00m';
+                document.getElementById('resumoExtras').textContent = somaSaldoMes > 0 ? this.minToTime(somaSaldoMes) : '0h 00m';
+                document.getElementById('resumoBanco').textContent = this.minToTime(bancoHoras);
                 const elSaldo = document.getElementById('resumoSaldo');
-                elSaldo.textContent = this.minToTime(somaSaldo);
-                elSaldo.style.color = somaSaldo >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                elSaldo.textContent = this.minToTime(saldoTotal);
+                elSaldo.style.color = saldoTotal >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+            },
+
+            // --- Banco de Horas ---
+            renderBancoHoras: function() {
+                const tbody = document.getElementById('tabelaBancoHorasBody');
+                tbody.innerHTML = '';
+                
+                const func = this.getFuncionarioAtual();
+                if (!func) return;
+                
+                // Obtém todos os meses com registros para este funcionário
+                const mesesRegistrados = [];
+                const chavesRegistros = Object.keys(this.data.registros);
+                
+                for (const chave of chavesRegistros) {
+                    if (chave.startsWith(`${func.id}_`)) {
+                        const [_, ano, mes] = chave.split('_');
+                        mesesRegistrados.push({ano: parseInt(ano), mes: parseInt(mes)});
+                    }
+                }
+                
+                // Ordena por ano e mês
+                mesesRegistrados.sort((a, b) => {
+                    if (a.ano !== b.ano) return a.ano - b.ano;
+                    return a.mes - b.mes;
+                });
+                
+                let bancoAcumulado = 0;
+                const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                
+                for (const {ano, mes} of mesesRegistrados) {
+                    const saldoMes = this.calcularSaldoMes(func.id, ano, mes);
+                    const bancoAnterior = bancoAcumulado;
+                    bancoAcumulado += saldoMes;
+                    
+                    const html = `
+                        <tr>
+                            <td><strong>${meses[mes]}/${ano}</strong></td>
+                            <td class="${saldoMes >= 0 ? 'saldo-positivo' : 'saldo-negativo'}">${this.minToTime(saldoMes)}</td>
+                            <td>${this.minToTime(bancoAnterior)}</td>
+                            <td class="${bancoAcumulado >= 0 ? 'saldo-positivo' : 'saldo-negativo'}"><strong>${this.minToTime(bancoAcumulado)}</strong></td>
+                            <td>
+                                <span class="status-badge" style="background: ${bancoAcumulado >= 0 ? '#4cc9f0' : '#f94144'}; color: white;">
+                                    ${bancoAcumulado >= 0 ? 'CRÉDITO' : 'DÉBITO'}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.insertAdjacentHTML('beforeend', html);
+                }
+                
+                // Atualiza o cache do banco de horas
+                this.data.bancoHoras[func.id] = bancoAcumulado;
             },
 
             renderFeriados: function() {
@@ -1012,6 +1271,7 @@
                     this.saveToStorage();
                     this.renderFeriados();
                     this.renderPonto();
+                    this.atualizarBancoHoras();
                     showToast('Feriado adicionado!', 'success');
                 }
             },
@@ -1022,6 +1282,7 @@
                 this.saveToStorage();
                 this.renderFeriados();
                 this.renderPonto();
+                this.atualizarBancoHoras();
             },
             
             renderAtestados: function() {
@@ -1051,7 +1312,8 @@
                     diasEspeciais.atestados.push(novoAtestado);
                     this.saveToStorage();
                     this.renderAtestados();
-                    this.renderPonto(); 
+                    this.renderPonto();
+                    this.atualizarBancoHoras();
                     showToast('Atestado adicionado!', 'success');
                 } else {
                     showToast('Atestado já cadastrado para esta data/período.', 'warning');
@@ -1064,6 +1326,7 @@
                 this.saveToStorage();
                 this.renderAtestados();
                 this.renderPonto();
+                this.atualizarBancoHoras();
             },
 
             processarImportacao: function(mes, ano) {
@@ -1130,6 +1393,7 @@
                         document.getElementById('selectAno').value = ano;
                         
                         this.renderPonto();
+                        this.atualizarBancoHoras();
                         fecharModalImportacao();
                         showToast(`${count} registros importados em ${mes+1}/${ano}!`, 'success');
                         navegar('ponto', document.querySelector('a[onclick*="ponto"]'));
@@ -1146,13 +1410,18 @@
                 const container = document.getElementById('listaFuncionariosGrid');
                 container.innerHTML = '';
                 this.data.funcionarios.forEach(f => {
+                    const banco = this.calcularBancoHorasFuncionario(f.id);
                     const card = `
                         <div class="card" style="border-left: 5px solid ${f.id === this.data.config.funcionarioAtualId ? 'var(--success-color)' : 'var(--gray-color)'}">
                             <div style="display:flex; justify-content:space-between; align-items:center;">
                                 <h3>${f.nome}</h3>
-                                ${f.id !== this.data.config.funcionarioAtualId ? `<button class="btn btn-danger" style="padding:5px 10px; font-size:12px;" onclick="App.removerFuncionario('${f.id}')"><i class="fas fa-trash"></i></button>` : '<span class="status-badge status-trabalhado">Ativo</span>'}
+                                ${f.id !== this.data.config.funcionarioAtualId ? `<button class="btn btn-danger" style="padding:5px 10px; font-size:12px;" onclick="App.removerFuncionario('${f.id}')"><i class="fas fa-trash"></i></button>` : '<span class="status-badge" style="background:var(--success-color); color:white;">Ativo</span>'}
                             </div>
                             <p style="color:#666; margin-top:5px;">${f.cargo} | Matrícula: ${f.codigo}</p>
+                            <p style="margin-top:10px; font-size:14px;">
+                                <i class="fas fa-piggy-bank"></i> Banco de Horas: 
+                                <span class="${banco >= 0 ? 'saldo-positivo' : 'saldo-negativo'}">${this.minToTime(banco)}</span>
+                            </p>
                             <button class="btn btn-primary" style="width:100%; margin-top:15px;" onclick="trocarFuncionario('${f.id}')">Selecionar</button>
                         </div>
                     `;
@@ -1161,10 +1430,16 @@
             },
 
             removerFuncionario: function(id) {
-                if (confirm('Tem certeza? Isso apagará o cadastro e todos os dias especiais deste funcionário.')) {
+                if (confirm('Tem certeza? Isso apagará o cadastro, registros e banco de horas deste funcionário.')) {
                     this.data.funcionarios = this.data.funcionarios.filter(f => f.id !== id);
-                    // Remove também os dias especiais deste funcionário
+                    // Remove também os dias especiais e banco de horas deste funcionário
                     delete this.data.diasEspeciais[id];
+                    delete this.data.bancoHoras[id];
+                    
+                    // Remove registros deste funcionário
+                    const chavesParaRemover = Object.keys(this.data.registros).filter(chave => chave.startsWith(`${id}_`));
+                    chavesParaRemover.forEach(chave => delete this.data.registros[chave]);
+                    
                     this.saveToStorage();
                     this.renderAll();
                     showToast('Funcionário removido', 'success');
@@ -1238,6 +1513,14 @@
             if (sectionId === 'feriados') {
                 App.updateCurrentFuncName();
             }
+            
+            // Atualiza o banco de horas se navegar para a seção
+            if (sectionId === 'bancohoras') {
+                App.renderBancoHoras();
+            }
+            
+            // Verifica estados vazios
+            App.checkEmptyStates();
         }
 
         function showToast(msg, type = 'info') {
@@ -1256,7 +1539,10 @@
             App.data.config.funcionarioAtualId = id;
             App.saveToStorage();
             App.renderAll();
-            showToast(`Perfil alterado para ${App.getFuncionarioAtual().nome}`, 'success');
+            const func = App.getFuncionarioAtual();
+            if (func) {
+                showToast(`Perfil alterado para ${func.nome}`, 'success');
+            }
         }
 
         function abrirModalFuncionario() { document.getElementById('modalFuncionario').classList.add('active'); }
@@ -1283,7 +1569,7 @@
             const codigo = document.getElementById('funcCodigo').value;
             const jornada = document.getElementById('funcJornada').value;
 
-            if (!nome || !cargo) return showToast('Preencha os campos', 'error');
+            if (!nome || !cargo) return showToast('Preencha os campos obrigatórios', 'error');
 
             App.addFuncionario(nome, cargo, codigo, jornada);
             fecharModalFuncionario();
@@ -1301,6 +1587,7 @@
 
         function salvarPontoAtual() {
             App.saveToStorage();
+            App.atualizarBancoHoras();
             showToast('Dados salvos com sucesso', 'success');
         }
 
@@ -1355,6 +1642,12 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('p', 'mm', 'a4');
             const func = App.getFuncionarioAtual();
+            
+            if (!func) {
+                showToast('Selecione um funcionário primeiro', 'error');
+                return;
+            }
+            
             const horasExtras = App.calcularHorasExtrasMes();
             
             // Se não há horas extras, avisar
@@ -1485,6 +1778,11 @@
             const doc = new jsPDF('p', 'mm', 'a4');
             const func = App.getFuncionarioAtual();
             
+            if (!func) {
+                showToast('Selecione um funcionário primeiro', 'error');
+                return;
+            }
+            
             const azulPrincipal = [67, 97, 238];
             const cinzaEscuro = [50, 50, 50];
 
@@ -1596,12 +1894,16 @@
 
             let finalY = doc.lastAutoTable.finalY + 10;
             
+            // Banco de Horas
+            const bancoHoras = App.calcularBancoHorasFuncionario();
             const saldoFinalEmMinutos = totalSaldo;
-            const statusSaldo = saldoFinalEmMinutos >= 0 ? 'POSITIVO (Horas Extras)' : 'NEGATIVO (Horas a Compensar)';
-            const corStatus = saldoFinalEmMinutos >= 0 ? [0, 150, 0] : [200, 50, 50];
+            const saldoTotal = bancoHoras + saldoFinalEmMinutos;
+            
+            const statusSaldo = saldoTotal >= 0 ? 'POSITIVO (Crédito)' : 'NEGATIVO (Débito)';
+            const corStatus = saldoTotal >= 0 ? [0, 150, 0] : [200, 50, 50];
 
             doc.setFillColor(240, 240, 240);
-            doc.rect(14, finalY, 182, 30, 'F');
+            doc.rect(14, finalY, 182, 40, 'F');
             doc.setTextColor(...cinzaEscuro);
             doc.setFontSize(11);
 
@@ -1609,13 +1911,14 @@
             doc.text("BALANÇO GERAL DO PERÍODO", 20, finalY + 8);
             
             doc.setFont("helvetica", "normal");
-            doc.text(`TOTAL TRABALHADO (Abonado incluído): ${App.minToTime(totalTrabalhado)}`, 20, finalY + 15);
-            
-            doc.text(`SALDO FINAL: ${App.minToTime(Math.abs(saldoFinalEmMinutos))}`, 120, finalY + 15);
+            doc.text(`TOTAL TRABALHADO: ${App.minToTime(totalTrabalhado)}`, 20, finalY + 16);
+            doc.text(`SALDO DO MÊS: ${App.minToTime(saldoFinalEmMinutos)}`, 20, finalY + 24);
+            doc.text(`BANCO DE HORAS: ${App.minToTime(bancoHoras)}`, 120, finalY + 16);
+            doc.text(`SALDO TOTAL: ${App.minToTime(saldoTotal)}`, 120, finalY + 24);
             
             doc.setFont("helvetica", "bold");
             doc.setTextColor(...corStatus);
-            doc.text(`STATUS: ${statusSaldo}`, 20, finalY + 23);
+            doc.text(`STATUS: ${statusSaldo}`, 20, finalY + 34);
             
             doc.setTextColor(...cinzaEscuro);
             
@@ -1639,6 +1942,11 @@
 
         function exportarTabelaExcel() {
             const func = App.getFuncionarioAtual();
+            if (!func) {
+                showToast('Selecione um funcionário primeiro', 'error');
+                return;
+            }
+            
             const key = App.getKeyRegistro();
             const registrosMes = App.data.registros[key] || {};
             const diasNoMes = new Date(App.ui.anoAtual, App.ui.mesAtual + 1, 0).getDate();
