@@ -241,6 +241,7 @@
                     <a href="#" class="menu-item" onclick="navegar('bancohoras', this)"><i class="fas fa-piggy-bank"></i> Banco de Horas</a>
                     <a href="#" class="menu-item" onclick="navegar('importacao', this)"><i class="fas fa-file-excel"></i> Importar Excel</a>
                     <a href="#" class="menu-item" onclick="navegar('relatorios', this)"><i class="fas fa-chart-pie"></i> Relatórios</a>
+                    <a href="#" class="menu-item" onclick="navegar('relatoriosaldominutos', this)"><i class="fas fa-file-alt"></i> Relatório Saldo</a>
                     <a href="#" class="menu-item" onclick="navegar('config', this)"><i class="fas fa-cog"></i> Configurações</a>
                 </nav>
             </aside>
@@ -501,6 +502,74 @@
                     </div>
                 </section>
 
+                <!-- NOVA SEÇÃO: Relatório de Saldo de Horas -->
+                <section id="relatoriosaldominutos" class="content-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <i class="fas fa-file-alt" style="background: linear-gradient(135deg, var(--warning-color), #f3722c);"></i>
+                            <h2>Relatório de Saldo de Horas</h2>
+                        </div>
+                    </div>
+
+                    <div class="cards-grid">
+                        <div class="card">
+                            <h3><i class="fas fa-users"></i> Relatório Geral de Saldos</h3>
+                            <p style="margin: 10px 0;">Gera relatório completo com o saldo de horas de todos os funcionários, incluindo saldo total da empresa.</p>
+                            <button class="btn btn-primary" onclick="gerarRelatorioSaldosGeral()" style="width: 100%; margin-top: 15px;">
+                                <i class="fas fa-download"></i> Baixar Relatório Geral
+                            </button>
+                        </div>
+                        <div class="card">
+                            <h3><i class="fas fa-user"></i> Relatório por Funcionário</h3>
+                            <p style="margin: 10px 0;">Gera relatório detalhado do saldo de horas do funcionário atualmente selecionado.</p>
+                            <button class="btn btn-success" onclick="gerarRelatorioSaldoFuncionario()" style="width: 100%; margin-top: 15px;">
+                                <i class="fas fa-download"></i> Baixar Relatório Individual
+                            </button>
+                        </div>
+                        <div class="card">
+                            <h3><i class="fas fa-calendar-alt"></i> Relatório Mensal Detalhado</h3>
+                            <p style="margin: 10px 0;">Gera relatório com detalhes mês a mês do banco de horas para todos os funcionários.</p>
+                            <button class="btn btn-special" onclick="gerarRelatorioMensalDetalhado()" style="width: 100%; margin-top: 15px;">
+                                <i class="fas fa-download"></i> Baixar Relatório Mensal
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card" style="margin-top: 30px;">
+                        <h3><i class="fas fa-chart-bar"></i> Visão Geral dos Saldos</h3>
+                        <p style="margin-bottom: 20px; color: #666;">Resumo visual dos saldos de horas de todos os funcionários.</p>
+                        
+                        <div class="table-wrapper">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Funcionário</th>
+                                        <th>Cargo</th>
+                                        <th>Matrícula</th>
+                                        <th>Saldo Banco de Horas</th>
+                                        <th>Status</th>
+                                        <th>Banco Ativo</th>
+                                        <th>Exportar</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaResumoSaldos">
+                                    <!-- Será preenchido via JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h4><i class="fas fa-calculator"></i> Saldo Total da Empresa</h4>
+                                <p id="saldoTotalEmpresa" style="font-size: 24px; font-weight: bold; margin-top: 5px;">0h 00m</p>
+                            </div>
+                            <button class="btn btn-dark" onclick="App.atualizarResumoSaldos()">
+                                <i class="fas fa-sync-alt"></i> Atualizar
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
                 <section id="config" class="content-section">
                     <div class="section-header">
                         <div class="section-title">
@@ -574,6 +643,11 @@
                 <label>Jornada Diária (Horas)</label>
                 <input type="number" id="funcJornada" class="form-control" value="8">
             </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" id="funcBancoHorasAtivo" checked> Ativar Banco de Horas para este funcionário
+                </label>
+            </div>
             <div class="btn-group">
                 <button class="btn btn-success" onclick="salvarFuncionarioModal()">Salvar</button>
                 <button class="btn btn-warning" onclick="fecharModalFuncionario()">Cancelar</button>
@@ -593,7 +667,7 @@
             </div>
             <div class="form-group">
                 <label>Ano de Referência</label>
-                                <select id="importAnoRef" class="form-control"></select>
+                <select id="importAnoRef" class="form-control"></select>
             </div>
 
             <div class="upload-zone" onclick="document.getElementById('fileUpload').click()" style="padding: 20px; margin-top: 20px;">
@@ -622,7 +696,8 @@
                 funcionarios: [], 
                 registros: {},    
                 diasEspeciais: {},
-                bancoHoras: {}, // Novo: Banco de horas por funcionário
+                bancoHoras: {}, // Banco de horas por funcionário
+                historicoBancoHoras: {}, // Histórico mensal detalhado
                 config: {
                     funcionarioAtualId: null,
                     backupAutoAtivo: true
@@ -651,6 +726,8 @@
                 
                 // Verifica se há funcionários para mostrar estados vazios
                 this.checkEmptyStates();
+                // Atualiza o resumo de saldos
+                this.atualizarResumoSaldos();
             },
 
             // --- Monitor de Atividade ---
@@ -697,19 +774,27 @@
 
             // --- Gerenciamento de Dados ---
             saveToStorage: function() {
-                localStorage.setItem('ponto_app_data_v3', JSON.stringify(this.data));
+                localStorage.setItem('ponto_app_data_v5', JSON.stringify(this.data));
             },
 
             loadFromStorage: function() {
-                const raw = localStorage.getItem('ponto_app_data_v3');
+                const raw = localStorage.getItem('ponto_app_data_v5');
                 if (raw) {
                     const parsed = JSON.parse(raw);
                     this.data.empresa = parsed.empresa || this.data.empresa;
                     this.data.funcionarios = parsed.funcionarios || [];
                     this.data.registros = parsed.registros || {};
                     this.data.diasEspeciais = parsed.diasEspeciais || {};
-                    this.data.bancoHoras = parsed.bancoHoras || {}; // Novo
+                    this.data.bancoHoras = parsed.bancoHoras || {};
+                    this.data.historicoBancoHoras = parsed.historicoBancoHoras || {};
                     this.data.config = parsed.config || {};
+                    
+                    // Garantir que todos os funcionários tenham a propriedade bancoHorasAtivo
+                    this.data.funcionarios.forEach(func => {
+                        if (func.bancoHorasAtivo === undefined) {
+                            func.bancoHorasAtivo = true;
+                        }
+                    });
                 }
             },
 
@@ -744,7 +829,7 @@
                 } else {
                     document.getElementById('bancohorasEmptyState').style.display = 'none';
                     document.getElementById('bancohorasContent').style.display = 'block';
-                    this.renderBancoHoras(); // Renderiza o banco de horas
+                    this.renderBancoHoras();
                 }
                 
                 // Funcionários
@@ -768,10 +853,15 @@
                 return this.data.diasEspeciais[id];
             },
 
-            // --- BANCO DE HORAS ---
+            // --- BANCO DE HORAS MELHORADO ---
             calcularBancoHorasFuncionario: function(funcId = null) {
                 const id = funcId || this.data.config.funcionarioAtualId;
                 if (!id) return 0;
+                
+                const func = this.data.funcionarios.find(f => f.id === id);
+                if (!func || !func.bancoHorasAtivo) {
+                    return 0;
+                }
                 
                 // Se já temos o banco calculado, retornamos
                 if (this.data.bancoHoras[id] !== undefined) {
@@ -787,12 +877,30 @@
                         const [_, ano, mes] = chave.split('_');
                         const saldoMes = this.calcularSaldoMes(id, parseInt(ano), parseInt(mes));
                         bancoTotal += saldoMes;
+                        
+                        // Registra no histórico mensal
+                        this.registrarHistoricoMensal(id, parseInt(ano), parseInt(mes), saldoMes);
                     }
                 }
                 
                 // Salva no cache
                 this.data.bancoHoras[id] = bancoTotal;
                 return bancoTotal;
+            },
+
+            // Registra no histórico mensal de banco de horas
+            registrarHistoricoMensal: function(funcId, ano, mes, saldoMes) {
+                if (!this.data.historicoBancoHoras[funcId]) {
+                    this.data.historicoBancoHoras[funcId] = {};
+                }
+                
+                const chave = `${ano}_${mes}`;
+                this.data.historicoBancoHoras[funcId][chave] = {
+                    ano: ano,
+                    mes: mes,
+                    saldoMes: saldoMes,
+                    dataRegistro: new Date().toISOString()
+                };
             },
 
             calcularSaldoMes: function(funcId, ano, mes) {
@@ -823,6 +931,63 @@
                 // Recalcula o banco de horas
                 this.data.bancoHoras[id] = this.calcularBancoHorasFuncionario(id);
                 this.saveToStorage();
+                
+                // Atualiza o resumo de saldos
+                this.atualizarResumoSaldos();
+            },
+
+            // --- Relatório de Saldos ---
+            atualizarResumoSaldos: function() {
+                const tbody = document.getElementById('tabelaResumoSaldos');
+                if (!tbody) return;
+                
+                tbody.innerHTML = '';
+                
+                let saldoTotalEmpresa = 0;
+                
+                this.data.funcionarios.forEach(func => {
+                    const banco = this.calcularBancoHorasFuncionario(func.id);
+                    saldoTotalEmpresa += banco;
+                    
+                    const status = banco >= 0 ? 'Crédito' : 'Débito';
+                    const corStatus = banco >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                    
+                    const html = `
+                        <tr>
+                            <td><strong>${func.nome}</strong></td>
+                            <td>${func.cargo}</td>
+                            <td>${func.codigo}</td>
+                            <td class="${banco >= 0 ? 'saldo-positivo' : 'saldo-negativo'}">
+                                <strong>${this.minToTime(banco)}</strong>
+                            </td>
+                            <td>
+                                <span class="status-badge" style="background: ${corStatus}; color: white;">
+                                    ${status}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="status-badge" style="background: ${func.bancoHorasAtivo ? 'var(--success-color)' : 'var(--danger-color)'}; color: white;">
+                                    ${func.bancoHorasAtivo ? 'Ativo' : 'Inativo'}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-primary" onclick="gerarRelatorioSaldoFuncionarioEspecifico('${func.id}')">
+                                    <i class="fas fa-download"></i> Exportar
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.insertAdjacentHTML('beforeend', html);
+                });
+                
+                // Atualiza o saldo total da empresa
+                const saldoTotalElement = document.getElementById('saldoTotalEmpresa');
+                if (saldoTotalElement) {
+                    saldoTotalElement.textContent = this.minToTime(saldoTotalEmpresa);
+                    saldoTotalElement.style.color = saldoTotalEmpresa >= 0 ? 'var(--success-color)' : 'var(--danger-color)';
+                }
+                
+                return saldoTotalEmpresa;
             },
 
             // --- BACKUP E RESTAURAÇÃO ---
@@ -868,20 +1033,33 @@
             limparSistema: function() {
                 if (confirm('ATENÇÃO: Isso apagará TODOS os dados, funcionários e registros. Não há como desfazer.\n\nDeseja continuar?')) {
                     if(confirm('Tem certeza absoluta?')) {
-                        localStorage.removeItem('ponto_app_data_v3');
+                        localStorage.removeItem('ponto_app_data_v5');
                         location.reload();
                     }
                 }
             },
 
-            addFuncionario: function(nome, cargo, codigo, jornada) {
+            addFuncionario: function(nome, cargo, codigo, jornada, bancoHorasAtivo = true) {
                 const id = 'func_' + Date.now();
-                const novo = { id, nome, cargo, codigo, jornada };
+                const novo = { id, nome, cargo, codigo, jornada, bancoHorasAtivo };
                 this.data.funcionarios.push(novo);
                 this.data.config.funcionarioAtualId = id;
                 this.saveToStorage();
                 this.checkEmptyStates();
+                this.atualizarResumoSaldos();
                 return id;
+            },
+
+            toggleBancoHorasFuncionario: function(funcId) {
+                const func = this.data.funcionarios.find(f => f.id === funcId);
+                if (func) {
+                    func.bancoHorasAtivo = !func.bancoHorasAtivo;
+                    this.saveToStorage();
+                    this.renderListaFuncionarios();
+                    this.renderBancoHoras();
+                    this.atualizarResumoSaldos();
+                    showToast(`Banco de horas ${func.bancoHorasAtivo ? 'ativado' : 'desativado'} para ${func.nome}`, 'success');
+                }
             },
 
             getFuncionarioAtual: function() {
@@ -954,6 +1132,7 @@
                 let saldo = 0;
                 let jornadaEfetiva = jornadaHoras * 60;
 
+                // ** CORREÇÃO CRÍTICA: AS HORAS EXTRAS DEVEM SER CONTABILIZADAS NO BANCO DE HORAS **
                 if (isAtestadoDay) {
                     jornadaEfetiva = minutosAbonados; 
                     if (!teveBatida) {
@@ -964,20 +1143,24 @@
                     }
                 }
                 else if (isDomingo || isFeriado) {
+                    // Para domingos e feriados, toda hora trabalhada é extra (100%)
                     jornadaEfetiva = 0;
                     if (teveBatida) {
-                        saldo = trabalhado; 
+                        saldo = trabalhado; // 100% extra
                     }
                 }
                 else if (isSabado) {
-                    const jornadaSabado = 4 * 60; 
+                    const jornadaSabado = 4 * 60; // 4 horas para sábado
                     if(teveBatida) {
-                        saldo = trabalhado - jornadaSabado; 
+                        // Para sábados, calcula horas extras a partir das 13:00
+                        const horasExtrasSabado = this.calcularHorasExtrasSabado(reg, jornadaSabado);
+                        saldo = horasExtrasSabado;
                     }
                 }
                 else {
-                    if (teveBatida || (!isDomingo && !isSabado)) { 
-                         saldo = trabalhado - jornadaEfetiva;
+                    // Dias normais: horas extras são o que excede a jornada
+                    if (teveBatida) { 
+                        saldo = trabalhado - jornadaEfetiva;
                     }
                 }
 
@@ -991,6 +1174,26 @@
                     isFeriado: isFeriado,
                     isSabado: isSabado
                 };
+            },
+
+            // Nova função para calcular horas extras em sábados a partir das 13:00
+            calcularHorasExtrasSabado: function(reg, jornadaSabado) {
+                let totalMinutos = 0;
+                
+                // Calcula o tempo trabalhado no sábado
+                if (reg.e1 && reg.s1) totalMinutos += (this.timeToMin(reg.s1) - this.timeToMin(reg.e1));
+                if (reg.e2 && reg.s2) totalMinutos += (this.timeToMin(reg.s2) - this.timeToMin(reg.e2));
+                
+                // Se trabalhou após as 13:00, considera como hora extra
+                let horasExtras = 0;
+                if (reg.e1) {
+                    const entrada1Min = this.timeToMin(reg.e1);
+                    if (entrada1Min >= 13 * 60) { // 13:00 em minutos
+                        horasExtras = totalMinutos - jornadaSabado;
+                    }
+                }
+                
+                return horasExtras > 0 ? horasExtras : totalMinutos - jornadaSabado;
             },
 
             setupDates: function() {
@@ -1131,7 +1334,7 @@
                 
                 this.updateRowVisuals(dia);
                 this.updateDashboardTotals();
-                this.atualizarBancoHoras(); // Atualiza o banco de horas
+                this.atualizarBancoHoras();
             },
 
             updateRowVisuals: function(dia) {
@@ -1281,8 +1484,8 @@
                 diasEspeciais.feriados = diasEspeciais.feriados.filter(d => d !== dateStr);
                 this.saveToStorage();
                 this.renderFeriados();
-                this.renderPonto();
-                this.atualizarBancoHoras();
+                    this.renderPonto();
+                    this.atualizarBancoHoras();
             },
             
             renderAtestados: function() {
@@ -1415,14 +1618,24 @@
                         <div class="card" style="border-left: 5px solid ${f.id === this.data.config.funcionarioAtualId ? 'var(--success-color)' : 'var(--gray-color)'}">
                             <div style="display:flex; justify-content:space-between; align-items:center;">
                                 <h3>${f.nome}</h3>
-                                ${f.id !== this.data.config.funcionarioAtualId ? `<button class="btn btn-danger" style="padding:5px 10px; font-size:12px;" onclick="App.removerFuncionario('${f.id}')"><i class="fas fa-trash"></i></button>` : '<span class="status-badge" style="background:var(--success-color); color:white;">Ativo</span>'}
+                                <div style="display:flex; gap:10px; align-items:center;">
+                                    <span class="status-badge" style="background: ${f.bancoHorasAtivo ? 'var(--success-color)' : 'var(--danger-color)'}; color: white;">
+                                        ${f.bancoHorasAtivo ? 'Banco Ativo' : 'Banco Inativo'}
+                                    </span>
+                                    ${f.id !== this.data.config.funcionarioAtualId ? `<button class="btn btn-danger" style="padding:5px 10px; font-size:12px;" onclick="App.removerFuncionario('${f.id}')"><i class="fas fa-trash"></i></button>` : '<span class="status-badge" style="background:var(--success-color); color:white;">Ativo</span>'}
+                                </div>
                             </div>
                             <p style="color:#666; margin-top:5px;">${f.cargo} | Matrícula: ${f.codigo}</p>
                             <p style="margin-top:10px; font-size:14px;">
                                 <i class="fas fa-piggy-bank"></i> Banco de Horas: 
                                 <span class="${banco >= 0 ? 'saldo-positivo' : 'saldo-negativo'}">${this.minToTime(banco)}</span>
                             </p>
-                            <button class="btn btn-primary" style="width:100%; margin-top:15px;" onclick="trocarFuncionario('${f.id}')">Selecionar</button>
+                            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                                <button class="btn btn-primary" style="flex:1;" onclick="trocarFuncionario('${f.id}')">Selecionar</button>
+                                <button class="btn ${f.bancoHorasAtivo ? 'btn-warning' : 'btn-success'}" style="flex:1;" onclick="App.toggleBancoHorasFuncionario('${f.id}')">
+                                    ${f.bancoHorasAtivo ? 'Desativar Banco' : 'Ativar Banco'}
+                                </button>
+                            </div>
                         </div>
                     `;
                     container.innerHTML += card;
@@ -1435,6 +1648,7 @@
                     // Remove também os dias especiais e banco de horas deste funcionário
                     delete this.data.diasEspeciais[id];
                     delete this.data.bancoHoras[id];
+                    delete this.data.historicoBancoHoras[id];
                     
                     // Remove registros deste funcionário
                     const chavesParaRemover = Object.keys(this.data.registros).filter(chave => chave.startsWith(`${id}_`));
@@ -1442,6 +1656,7 @@
                     
                     this.saveToStorage();
                     this.renderAll();
+                    this.atualizarResumoSaldos();
                     showToast('Funcionário removido', 'success');
                 }
             },
@@ -1494,6 +1709,37 @@
                     domingo: horasExtrasDomingo,
                     total: horasExtrasNormais + horasExtrasFeriado + horasExtrasDomingo
                 };
+            },
+
+            // --- Obter histórico de banco de horas por funcionário ---
+            getHistoricoBancoHorasFuncionario: function(funcId) {
+                const historico = this.data.historicoBancoHoras[funcId] || {};
+                const meses = Object.keys(historico);
+                
+                return meses.map(chave => {
+                    const item = historico[chave];
+                    return {
+                        ano: item.ano,
+                        mes: item.mes,
+                        saldoMes: item.saldoMes,
+                        dataRegistro: item.dataRegistro
+                    };
+                }).sort((a, b) => {
+                    if (a.ano !== b.ano) return a.ano - b.ano;
+                    return a.mes - b.mes;
+                });
+            },
+
+            // --- Obter saldo total por período ---
+            getSaldoTotalPorPeriodo: function(ano, mes) {
+                let saldoTotal = 0;
+                
+                this.data.funcionarios.forEach(func => {
+                    const saldoMes = this.calcularSaldoMes(func.id, ano, mes);
+                    saldoTotal += saldoMes;
+                });
+                
+                return saldoTotal;
             }
         };
 
@@ -1517,6 +1763,11 @@
             // Atualiza o banco de horas se navegar para a seção
             if (sectionId === 'bancohoras') {
                 App.renderBancoHoras();
+            }
+            
+            // Atualiza o resumo de saldos se navegar para a seção
+            if (sectionId === 'relatoriosaldominutos') {
+                App.atualizarResumoSaldos();
             }
             
             // Verifica estados vazios
@@ -1568,10 +1819,11 @@
             const cargo = document.getElementById('funcCargo').value;
             const codigo = document.getElementById('funcCodigo').value;
             const jornada = document.getElementById('funcJornada').value;
+            const bancoHorasAtivo = document.getElementById('funcBancoHorasAtivo').checked;
 
             if (!nome || !cargo) return showToast('Preencha os campos obrigatórios', 'error');
 
-            App.addFuncionario(nome, cargo, codigo, jornada);
+            App.addFuncionario(nome, cargo, codigo, jornada, bancoHorasAtivo);
             fecharModalFuncionario();
             App.renderAll();
             showToast('Funcionário cadastrado!', 'success');
@@ -1635,6 +1887,477 @@
 
         function cancelarFechamento() {
             document.getElementById('modalFechamento').classList.remove('active');
+        }
+
+        // ==========================================
+        // FUNÇÕES PARA RELATÓRIOS DE SALDO DE HORAS
+        // ==========================================
+
+        function gerarRelatorioSaldosGeral() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            
+            const azulPrincipal = [67, 97, 238];
+            const verde = [76, 201, 240];
+            const vermelho = [249, 65, 68];
+            
+            // Cabeçalho
+            doc.setFillColor(...azulPrincipal);
+            doc.rect(0, 0, 210, 40, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(22);
+            doc.setFont("helvetica", "bold");
+            doc.text("RELATÓRIO DE SALDO DE HORAS - GERAL", 105, 18, { align: "center" });
+            
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text(`${App.data.empresa.nome} | CNPJ: ${App.data.empresa.cnpj}`, 105, 26, { align: "center" });
+            doc.text(`Data de emissão: ${new Date().toLocaleDateString('pt-BR')}`, 105, 32, { align: "center" });
+            
+            // Tabela de funcionários
+            let yPos = 50;
+            
+            const tableData = [];
+            let saldoTotalEmpresa = 0;
+            
+            // Cabeçalho
+            tableData.push([
+                { content: 'Funcionário', styles: { fontStyle: 'bold' } },
+                { content: 'Cargo', styles: { fontStyle: 'bold' } },
+                { content: 'Matrícula', styles: { fontStyle: 'bold' } },
+                { content: 'Saldo Banco de Horas', styles: { fontStyle: 'bold' } },
+                { content: 'Status', styles: { fontStyle: 'bold' } },
+                { content: 'Banco Ativo', styles: { fontStyle: 'bold' } }
+            ]);
+            
+            // Dados
+            App.data.funcionarios.forEach(func => {
+                const banco = App.calcularBancoHorasFuncionario(func.id);
+                saldoTotalEmpresa += banco;
+                
+                const status = banco >= 0 ? 'Crédito' : 'Débito';
+                
+                tableData.push([
+                    func.nome,
+                    func.cargo,
+                    func.codigo,
+                    { content: App.minToTime(banco), styles: { textColor: banco >= 0 ? [0, 150, 0] : [200, 50, 50] } },
+                    status,
+                    func.bancoHorasAtivo ? 'Sim' : 'Não'
+                ]);
+            });
+            
+            // Rodapé com total
+            tableData.push([
+                { content: 'TOTAL GERAL', colSpan: 4, styles: { fontStyle: 'bold', halign: 'right' } },
+                { content: App.minToTime(saldoTotalEmpresa), styles: { fontStyle: 'bold', textColor: saldoTotalEmpresa >= 0 ? [0, 150, 0] : [200, 50, 50] } },
+                { content: '', styles: { fontStyle: 'bold' } }
+            ]);
+            
+            doc.autoTable({
+                startY: yPos,
+                head: [tableData[0]],
+                body: tableData.slice(1, -1),
+                foot: [tableData[tableData.length - 1]],
+                theme: 'grid',
+                headStyles: { fillColor: azulPrincipal, textColor: 255, fontStyle: 'bold', halign: 'center' },
+                footStyles: { fillColor: [240, 240, 240], textColor: [50, 50, 50], fontStyle: 'bold' },
+                bodyStyles: { halign: 'center' },
+                alternateRowStyles: { fillColor: [248, 249, 252] },
+                styles: { fontSize: 9, cellPadding: 5 },
+                columnStyles: {
+                    0: { cellWidth: 40 },
+                    1: { cellWidth: 35 },
+                    2: { cellWidth: 25 },
+                    3: { cellWidth: 40 },
+                    4: { cellWidth: 25 },
+                    5: { cellWidth: 25 }
+                }
+            });
+            
+            yPos = doc.lastAutoTable.finalY + 15;
+            
+            // Resumo
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(50, 50, 50);
+            doc.text("RESUMO:", 20, yPos);
+            
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Total de Funcionários: ${App.data.funcionarios.length}`, 20, yPos + 8);
+            
+            const funcionariosCredito = App.data.funcionarios.filter(f => App.calcularBancoHorasFuncionario(f.id) >= 0).length;
+            const funcionariosDebito = App.data.funcionarios.filter(f => App.calcularBancoHorasFuncionario(f.id) < 0).length;
+            const funcionariosBancoAtivo = App.data.funcionarios.filter(f => f.bancoHorasAtivo).length;
+            
+            doc.text(`Funcionários com Crédito: ${funcionariosCredito}`, 20, yPos + 16);
+            doc.text(`Funcionários com Débito: ${funcionariosDebito}`, 20, yPos + 24);
+            doc.text(`Funcionários com Banco Ativo: ${funcionariosBancoAtivo}`, 20, yPos + 32);
+            
+            // Observações
+            yPos += 45;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.text("OBSERVAÇÕES:", 20, yPos);
+            
+            doc.setFont("helvetica", "normal");
+            const observacoes = [
+                "1. Saldo positivo indica horas extras trabalhadas (crédito).",
+                "2. Saldo negativo indica horas a compensar (débito).",
+                "3. Este relatório reflete o banco de horas acumulado de todos os meses.",
+                "4. O banco de horas é atualizado automaticamente a cada alteração no ponto.",
+                "5. Quando o Banco de Horas está inativo, o saldo é zerado e não há acúmulo."
+            ];
+            
+            observacoes.forEach((obs, index) => {
+                doc.text(obs, 25, yPos + 7 + (index * 5));
+            });
+            
+            // Rodapé
+            doc.setFontSize(8);
+            doc.setTextColor(150, 150, 150);
+            doc.text("Relatório gerado automaticamente por Ponto Enterprise System", 105, 285, { align: "center" });
+            
+            // Salvar
+            const date = new Date().toISOString().slice(0, 10);
+            doc.save(`Relatorio_Saldos_Geral_${date}.pdf`);
+            showToast('Relatório geral de saldos gerado com sucesso!', 'success');
+        }
+
+        function gerarRelatorioSaldoFuncionario() {
+            const func = App.getFuncionarioAtual();
+            if (!func) {
+                showToast('Selecione um funcionário primeiro', 'error');
+                return;
+            }
+            gerarRelatorioSaldoFuncionarioEspecifico(func.id);
+        }
+
+        function gerarRelatorioSaldoFuncionarioEspecifico(funcId) {
+            const func = App.data.funcionarios.find(f => f.id === funcId);
+            if (!func) {
+                showToast('Funcionário não encontrado', 'error');
+                return;
+            }
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            
+            const azulPrincipal = [67, 97, 238];
+            const verde = [76, 201, 240];
+            const vermelho = [249, 65, 68];
+            
+            // Cabeçalho
+            doc.setFillColor(...azulPrincipal);
+            doc.rect(0, 0, 210, 40, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(22);
+            doc.setFont("helvetica", "bold");
+            doc.text("RELATÓRIO DE SALDO DE HORAS", 105, 18, { align: "center" });
+            
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text(`${App.data.empresa.nome} | CNPJ: ${App.data.empresa.cnpj}`, 105, 26, { align: "center" });
+            doc.text(`Data de emissão: ${new Date().toLocaleDateString('pt-BR')}`, 105, 32, { align: "center" });
+            
+            // Informações do funcionário
+            doc.setFillColor(245, 247, 250);
+            doc.setDrawColor(200, 200, 200);
+            doc.roundedRect(14, 45, 182, 25, 3, 3, 'FD');
+            
+            doc.setTextColor(50, 50, 50);
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.text("FUNCIONÁRIO:", 20, 55);
+            doc.text("CARGO:", 120, 55);
+            doc.text("MATRÍCULA:", 20, 65);
+            doc.text("JORNADA DIÁRIA:", 120, 65);
+            
+            doc.setFont("helvetica", "normal");
+            doc.text(func.nome.toUpperCase(), 45, 55);
+            doc.text(func.cargo.toUpperCase(), 140, 55);
+            doc.text(func.codigo, 45, 65);
+            doc.text(`${func.jornada} HORAS`, 140, 65);
+            
+            // Status do banco de horas
+            const bancoAtivo = func.bancoHorasAtivo ? 'SIM' : 'NÃO';
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.text("BANCO DE HORAS ATIVO:", 20, 75);
+            doc.setFont("helvetica", "normal");
+            doc.text(bancoAtivo, 60, 75);
+            
+            let yPos = 80;
+            
+            // Se o banco estiver inativo, mostrar mensagem
+            if (!func.bancoHorasAtivo) {
+                doc.setFontSize(9);
+                doc.setTextColor(200, 50, 50);
+                doc.text("Observação: O banco de horas está inativo. O saldo total é zero e não há acúmulo.", 20, yPos);
+                yPos += 10;
+            }
+            
+            // Saldo atual
+            const bancoHoras = App.calcularBancoHorasFuncionario(func.id);
+            const status = bancoHoras >= 0 ? 'CRÉDITO' : 'DÉBITO';
+            const corStatus = bancoHoras >= 0 ? [0, 150, 0] : [200, 50, 50];
+            
+            yPos = Math.max(yPos, 85);
+            
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(50, 50, 50);
+            doc.text("SALDO ATUAL DO BANCO DE HORAS", 105, yPos, { align: "center" });
+            
+            yPos += 10;
+            doc.setFontSize(24);
+            doc.setTextColor(...corStatus);
+            doc.text(App.minToTime(bancoHoras), 105, yPos, { align: "center" });
+            
+            yPos += 10;
+            doc.setFontSize(12);
+            doc.text(status, 105, yPos, { align: "center" });
+            
+            // Histórico mensal - só mostrar se o banco estiver ativo
+            yPos += 20;
+            
+            if (func.bancoHorasAtivo) {
+                doc.setFontSize(12);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(50, 50, 50);
+                doc.text("HISTÓRICO MENSAL", 20, yPos);
+                
+                const historico = App.getHistoricoBancoHorasFuncionario(func.id);
+                const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                
+                if (historico.length > 0) {
+                    const tableData = [];
+                    tableData.push(['Mês/Ano', 'Saldo do Mês', 'Status']);
+                    
+                    let saldoAcumulado = 0;
+                    
+                    historico.forEach(item => {
+                        saldoAcumulado += item.saldoMes;
+                        const mesNome = meses[item.mes];
+                        const saldoColor = item.saldoMes >= 0 ? [0, 150, 0] : [200, 50, 50];
+                        const statusMes = item.saldoMes >= 0 ? 'Crédito' : 'Débito';
+                        
+                        tableData.push([
+                            `${mesNome}/${item.ano}`,
+                            { content: App.minToTime(item.saldoMes), styles: { textColor: saldoColor } },
+                            statusMes
+                        ]);
+                    });
+                    
+                    doc.autoTable({
+                        startY: yPos + 5,
+                        head: [tableData[0]],
+                        body: tableData.slice(1),
+                        theme: 'grid',
+                        headStyles: { fillColor: azulPrincipal, textColor: 255, fontStyle: 'bold', halign: 'center' },
+                        bodyStyles: { halign: 'center' },
+                        alternateRowStyles: { fillColor: [248, 249, 252] },
+                        styles: { fontSize: 9, cellPadding: 5 },
+                        columnStyles: {
+                            0: { cellWidth: 40 },
+                            1: { cellWidth: 50 },
+                            2: { cellWidth: 30 }
+                        }
+                    });
+                    
+                    yPos = doc.lastAutoTable.finalY + 10;
+                } else {
+                    yPos += 10;
+                    doc.setFontSize(10);
+                    doc.setFont("helvetica", "normal");
+                    doc.text("Nenhum histórico disponível", 20, yPos);
+                    yPos += 10;
+                }
+            } else {
+                // Se o banco estiver inativo, não mostrar histórico
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "italic");
+                doc.setTextColor(150, 150, 150);
+                doc.text("Histórico não disponível (banco de horas inativo).", 20, yPos);
+                yPos += 10;
+            }
+            
+            // Observações
+            yPos += 10;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(50, 50, 50);
+            doc.text("LEGENDAS:", 20, yPos);
+            
+            doc.setFont("helvetica", "normal");
+            const legendas = [
+                "• Crédito: Funcionário tem horas extras a receber",
+                "• Débito: Funcionário tem horas a compensar",
+                "• O banco de horas acumula automaticamente os saldos mensais",
+                "• Quando o banco está inativo, o saldo é zerado e não há acúmulo"
+            ];
+            
+            legendas.forEach((legenda, index) => {
+                doc.text(legenda, 25, yPos + 7 + (index * 5));
+            });
+            
+            // Rodapé
+            doc.setFontSize(8);
+            doc.setTextColor(150, 150, 150);
+            doc.text("Relatório gerado automaticamente por Ponto Enterprise System", 105, 285, { align: "center" });
+            
+            // Salvar
+            const nomeArquivo = `Relatorio_Saldo_${func.nome.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`;
+            doc.save(nomeArquivo);
+            showToast(`Relatório de ${func.nome} gerado com sucesso!`, 'success');
+        }
+
+        function gerarRelatorioMensalDetalhado() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            
+            const azulPrincipal = [67, 97, 238];
+            
+            // Cabeçalho
+            doc.setFillColor(...azulPrincipal);
+            doc.rect(0, 0, 210, 40, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(22);
+            doc.setFont("helvetica", "bold");
+            doc.text("RELATÓRIO MENSAL DETALHADO - BANCO DE HORAS", 105, 18, { align: "center" });
+            
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text(`${App.data.empresa.nome} | CNPJ: ${App.data.empresa.cnpj}`, 105, 26, { align: "center" });
+            doc.text(`Período: Todos os meses registrados | Data: ${new Date().toLocaleDateString('pt-BR')}`, 105, 32, { align: "center" });
+            
+            // Obtém todos os meses registrados
+            const todosMeses = {};
+            const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            
+            // Coleta todos os meses únicos
+            App.data.funcionarios.forEach(func => {
+                const historico = App.getHistoricoBancoHorasFuncionario(func.id);
+                historico.forEach(item => {
+                    const chave = `${item.ano}_${item.mes}`;
+                    if (!todosMeses[chave]) {
+                        todosMeses[chave] = { ano: item.ano, mes: item.mes, funcionarios: {} };
+                    }
+                    todosMeses[chave].funcionarios[func.id] = item.saldoMes;
+                });
+            });
+            
+            // Converte para array e ordena
+            const mesesArray = Object.values(todosMeses).sort((a, b) => {
+                if (a.ano !== b.ano) return a.ano - b.ano;
+                return a.mes - b.mes;
+            });
+            
+            let yPos = 50;
+            
+            // Para cada mês, cria uma tabela
+            mesesArray.forEach((mesInfo, index) => {
+                if (index > 0 && yPos > 250) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+                
+                const mesNome = meses[mesInfo.mes];
+                const saldoTotalMes = Object.values(mesInfo.funcionarios).reduce((sum, saldo) => sum + saldo, 0);
+                
+                // Título do mês
+                doc.setFontSize(12);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(50, 50, 50);
+                doc.text(`${mesNome}/${mesInfo.ano} - Saldo Total: ${App.minToTime(saldoTotalMes)}`, 20, yPos);
+                
+                // Tabela de funcionários para este mês
+                const tableData = [];
+                tableData.push(['Funcionário', 'Cargo', 'Saldo do Mês', 'Status', 'Banco Ativo']);
+                
+                App.data.funcionarios.forEach(func => {
+                    const saldoMes = mesInfo.funcionarios[func.id] || 0;
+                    if (saldoMes !== 0) { // Mostra apenas funcionários com saldo
+                        const saldoColor = saldoMes >= 0 ? [0, 150, 0] : [200, 50, 50];
+                        const status = saldoMes >= 0 ? 'Crédito' : 'Débito';
+                        
+                        tableData.push([
+                            func.nome,
+                            func.cargo,
+                            { content: App.minToTime(saldoMes), styles: { textColor: saldoColor } },
+                            status,
+                            func.bancoHorasAtivo ? 'Sim' : 'Não'
+                        ]);
+                    }
+                });
+                
+                if (tableData.length > 1) { // Se há dados além do cabeçalho
+                    doc.autoTable({
+                        startY: yPos + 5,
+                        head: [tableData[0]],
+                        body: tableData.slice(1),
+                        theme: 'grid',
+                        headStyles: { fillColor: azulPrincipal, textColor: 255, fontStyle: 'bold', halign: 'center' },
+                        bodyStyles: { halign: 'center' },
+                        alternateRowStyles: { fillColor: [248, 249, 252] },
+                        styles: { fontSize: 8, cellPadding: 4 },
+                        columnStyles: {
+                            0: { cellWidth: 45 },
+                            1: { cellWidth: 35 },
+                            2: { cellWidth: 35 },
+                            3: { cellWidth: 25 },
+                            4: { cellWidth: 25 }
+                        }
+                    });
+                    
+                    yPos = doc.lastAutoTable.finalY + 15;
+                } else {
+                    yPos += 10;
+                    doc.setFontSize(10);
+                    doc.setFont("helvetica", "normal");
+                    doc.text("Nenhum registro para este mês", 20, yPos);
+                    yPos += 10;
+                }
+            });
+            
+            // Resumo final
+            if (yPos > 250) {
+                doc.addPage();
+                yPos = 20;
+            }
+            
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(50, 50, 50);
+            doc.text("RESUMO GERAL", 20, yPos);
+            
+            const saldoTotalEmpresa = App.atualizarResumoSaldos();
+            const funcionariosCredito = App.data.funcionarios.filter(f => App.calcularBancoHorasFuncionario(f.id) >= 0).length;
+            const funcionariosDebito = App.data.funcionarios.filter(f => App.calcularBancoHorasFuncionario(f.id) < 0).length;
+            const funcionariosBancoAtivo = App.data.funcionarios.filter(f => f.bancoHorasAtivo).length;
+            
+            yPos += 10;
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Total de Funcionários: ${App.data.funcionarios.length}`, 20, yPos);
+            doc.text(`Funcionários com Crédito: ${funcionariosCredito}`, 20, yPos + 8);
+            doc.text(`Funcionários com Débito: ${funcionariosDebito}`, 20, yPos + 16);
+            doc.text(`Funcionários com Banco Ativo: ${funcionariosBancoAtivo}`, 20, yPos + 24);
+            doc.text(`Saldo Total da Empresa: ${App.minToTime(saldoTotalEmpresa)}`, 20, yPos + 32);
+            
+            // Rodapé
+            doc.setFontSize(8);
+            doc.setTextColor(150, 150, 150);
+            doc.text("Relatório gerado automaticamente por Ponto Enterprise System", 105, 285, { align: "center" });
+            
+            // Salvar
+            const date = new Date().toISOString().slice(0, 10);
+            doc.save(`Relatorio_Mensal_Detalhado_${date}.pdf`);
+            showToast('Relatório mensal detalhado gerado com sucesso!', 'success');
         }
 
         // --- Funções para Recibo de Horas Extras ---
