@@ -200,6 +200,48 @@
         </div>
     </div>
 
+    <!-- Modal de Baixa de Banco de Horas -->
+    <div id="modalBaixaBanco" class="modal-overlay" style="z-index: 2000;">
+        <div class="backup-modal">
+            <h3><i class="fas fa-piggy-bank"></i> Baixa no Banco de Horas</h3>
+            <p>Registrar baixa de horas do banco para pagamento</p>
+            
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Funcionário</label>
+                <select id="baixaFuncionario" class="form-control" style="margin-bottom: 0;"></select>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Saldo Disponível</label>
+                <input type="text" id="baixaSaldoDisponivel" class="form-control" readonly style="background: #f5f5f5;">
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label>Horas para Baixa (em minutos)</label>
+                <input type="number" id="baixaHoras" class="form-control" placeholder="Ex: 120 (para 2 horas)" min="1">
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label>Tipo de Baixa</label>
+                <select id="baixaTipo" class="form-control">
+                    <option value="pagamento">Pagamento de Horas Extras</option>
+                    <option value="compensacao">Compensação de Horas</option>
+                    <option value="ajuste">Ajuste Administrativo</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label>Observação</label>
+                <textarea id="baixaObservacao" class="form-control" rows="3" placeholder="Descreva o motivo da baixa..."></textarea>
+            </div>
+            
+            <div class="backup-buttons">
+                <button class="btn btn-success" onclick="confirmarBaixaBanco()"><i class="fas fa-check"></i> Confirmar Baixa</button>
+                <button class="btn btn-warning" onclick="cancelarBaixaBanco()"><i class="fas fa-times"></i> Cancelar</button>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <header class="app-header">
             <div class="logo">
@@ -400,6 +442,11 @@
                             <i class="fas fa-piggy-bank"></i>
                             <h2>Banco de Horas</h2>
                         </div>
+                        <div>
+                            <button class="btn btn-warning" onclick="abrirModalBaixaBanco()">
+                                <i class="fas fa-minus-circle"></i> Registrar Baixa
+                            </button>
+                        </div>
                     </div>
 
                     <div id="bancohorasEmptyState" class="empty-state" style="display: none;">
@@ -435,10 +482,32 @@
                                 <h4><i class="fas fa-info-circle"></i> Como funciona o Banco de Horas:</h4>
                                 <ul style="margin-top: 10px; color: #666; padding-left: 20px;">
                                     <li>Saldo positivo: horas extras trabalhadas</li>
-                                    <li>Saldo negativo: horas a compensar</li>
-                                    <li>O banco acumula mês a mês automaticamente</li>
+                                    <li>Saldo negativo: horas a compensar</li                                    <li>O banco acumula mês a mês automaticamente</li>
                                     <li>Valores em vermelho indicam débito, verde crédito</li>
                                 </ul>
+                            </div>
+                        </div>
+
+                        <!-- Nova seção: Histórico de Baixas -->
+                        <div class="card" style="margin-top: 30px;">
+                            <h3><i class="fas fa-history"></i> Histórico de Baixas</h3>
+                            <p style="margin-bottom: 20px; color: #666;">Registro de todas as baixas realizadas no banco de horas.</p>
+                            
+                            <div class="table-wrapper">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Data</th>
+                                            <th>Funcionário</th>
+                                            <th>Horas Baixadas</th>
+                                            <th>Tipo</th>
+                                            <th>Observação</th>
+                                            <th>Saldo Anterior</th>
+                                            <th>Saldo Atual</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabelaBaixasBody"></tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -698,6 +767,7 @@
                 diasEspeciais: {},
                 bancoHoras: {}, // Banco de horas por funcionário
                 historicoBancoHoras: {}, // Histórico mensal detalhado
+                baixasBancoHoras: {}, // Histórico de baixas do banco de horas
                 config: {
                     funcionarioAtualId: null,
                     backupAutoAtivo: true
@@ -728,6 +798,21 @@
                 this.checkEmptyStates();
                 // Atualiza o resumo de saldos
                 this.atualizarResumoSaldos();
+                // Renderiza histórico de baixas
+                this.renderHistoricoBaixas();
+                
+                // IMPORTANTE: Calcula e atualiza automaticamente o banco de horas para todos os funcionários
+                this.atualizarBancoHorasTodosFuncionarios();
+            },
+
+            // --- Atualiza banco de horas para TODOS os funcionários ---
+            atualizarBancoHorasTodosFuncionarios: function() {
+                this.data.funcionarios.forEach(func => {
+                    if (func.bancoHorasAtivo) {
+                        this.calcularBancoHorasFuncionario(func.id, true);
+                    }
+                });
+                this.saveToStorage();
             },
 
             // --- Monitor de Atividade ---
@@ -774,11 +859,11 @@
 
             // --- Gerenciamento de Dados ---
             saveToStorage: function() {
-                localStorage.setItem('ponto_app_data_v5', JSON.stringify(this.data));
+                localStorage.setItem('ponto_app_data_v6', JSON.stringify(this.data));
             },
 
             loadFromStorage: function() {
-                const raw = localStorage.getItem('ponto_app_data_v5');
+                const raw = localStorage.getItem('ponto_app_data_v6');
                 if (raw) {
                     const parsed = JSON.parse(raw);
                     this.data.empresa = parsed.empresa || this.data.empresa;
@@ -787,6 +872,7 @@
                     this.data.diasEspeciais = parsed.diasEspeciais || {};
                     this.data.bancoHoras = parsed.bancoHoras || {};
                     this.data.historicoBancoHoras = parsed.historicoBancoHoras || {};
+                    this.data.baixasBancoHoras = parsed.baixasBancoHoras || {};
                     this.data.config = parsed.config || {};
                     
                     // Garantir que todos os funcionários tenham a propriedade bancoHorasAtivo
@@ -830,6 +916,7 @@
                     document.getElementById('bancohorasEmptyState').style.display = 'none';
                     document.getElementById('bancohorasContent').style.display = 'block';
                     this.renderBancoHoras();
+                    this.renderHistoricoBaixas();
                 }
                 
                 // Funcionários
@@ -854,17 +941,19 @@
             },
 
             // --- BANCO DE HORAS MELHORADO ---
-            calcularBancoHorasFuncionario: function(funcId = null) {
+            calcularBancoHorasFuncionario: function(funcId = null, forceRecalc = false) {
                 const id = funcId || this.data.config.funcionarioAtualId;
                 if (!id) return 0;
                 
                 const func = this.data.funcionarios.find(f => f.id === id);
                 if (!func || !func.bancoHorasAtivo) {
+                    // Se banco de horas está inativo, zera o saldo
+                    this.data.bancoHoras[id] = 0;
                     return 0;
                 }
                 
-                // Se já temos o banco calculado, retornamos
-                if (this.data.bancoHoras[id] !== undefined) {
+                // Se já temos o banco calculado e não for forçar recálculo, retornamos
+                if (!forceRecalc && this.data.bancoHoras[id] !== undefined) {
                     return this.data.bancoHoras[id];
                 }
                 
@@ -882,6 +971,11 @@
                         this.registrarHistoricoMensal(id, parseInt(ano), parseInt(mes), saldoMes);
                     }
                 }
+                
+                // Subtrai as baixas já realizadas
+                const baixas = this.data.baixasBancoHoras[id] || [];
+                const totalBaixas = baixas.reduce((total, baixa) => total + baixa.horas, 0);
+                bancoTotal -= totalBaixas;
                 
                 // Salva no cache
                 this.data.bancoHoras[id] = bancoTotal;
@@ -928,12 +1022,114 @@
                 const id = funcId || this.data.config.funcionarioAtualId;
                 if (!id) return;
                 
-                // Recalcula o banco de horas
-                this.data.bancoHoras[id] = this.calcularBancoHorasFuncionario(id);
+                // Recalcula o banco de horas (forçando recálculo)
+                this.data.bancoHoras[id] = this.calcularBancoHorasFuncionario(id, true);
                 this.saveToStorage();
                 
                 // Atualiza o resumo de saldos
                 this.atualizarResumoSaldos();
+                
+                // Renderiza novamente a seção de banco de horas se estiver ativa
+                if (document.getElementById('bancohoras').classList.contains('active')) {
+                    this.renderBancoHoras();
+                    this.renderHistoricoBaixas();
+                }
+            },
+
+            // --- Registro de Baixa no Banco de Horas ---
+            registrarBaixaBancoHoras: function(funcId, horas, tipo, observacao) {
+                const func = this.data.funcionarios.find(f => f.id === funcId);
+                if (!func) {
+                    showToast('Funcionário não encontrado', 'error');
+                    return false;
+                }
+                
+                if (!func.bancoHorasAtivo) {
+                    showToast('Banco de horas não está ativo para este funcionário', 'error');
+                    return false;
+                }
+                
+                const saldoAtual = this.calcularBancoHorasFuncionario(funcId);
+                if (horas > saldoAtual) {
+                    showToast(`Saldo insuficiente. Saldo atual: ${this.minToTime(saldoAtual)}`, 'error');
+                    return false;
+                }
+                
+                // Cria registro da baixa
+                const baixa = {
+                    id: 'baixa_' + Date.now(),
+                    funcionarioId: funcId,
+                    funcionarioNome: func.nome,
+                    data: new Date().toISOString().split('T')[0],
+                    horas: horas,
+                    tipo: tipo,
+                    observacao: observacao,
+                    saldoAnterior: saldoAtual,
+                    saldoAtual: saldoAtual - horas
+                };
+                
+                // Adiciona ao histórico de baixas
+                if (!this.data.baixasBancoHoras[funcId]) {
+                    this.data.baixasBancoHoras[funcId] = [];
+                }
+                this.data.baixasBancoHoras[funcId].push(baixa);
+                
+                // Atualiza o banco de horas
+                this.atualizarBancoHoras(funcId);
+                this.saveToStorage();
+                
+                showToast(`Baixa de ${this.minToTime(horas)} registrada para ${func.nome}`, 'success');
+                return true;
+            },
+
+            // --- Renderização do Histórico de Baixas ---
+            renderHistoricoBaixas: function(funcId = null) {
+                const tbody = document.getElementById('tabelaBaixasBody');
+                if (!tbody) return;
+                
+                tbody.innerHTML = '';
+                
+                const id = funcId || this.data.config.funcionarioAtualId;
+                if (!id) return;
+                
+                const baixas = this.data.baixasBancoHoras[id] || [];
+                
+                if (baixas.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" style="text-align: center; color: #666; padding: 40px;">
+                                <i class="fas fa-history" style="font-size: 40px; margin-bottom: 10px; display: block;"></i>
+                                <h4>Nenhuma baixa registrada</h4>
+                                <p>As baixas aparecerão aqui quando forem registradas</p>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+                
+                // Ordena por data (mais recente primeiro)
+                baixas.sort((a, b) => new Date(b.data) - new Date(a.data));
+                
+                baixas.forEach(baixa => {
+                    const dataFormatada = new Date(baixa.data).toLocaleDateString('pt-BR');
+                    
+                    const html = `
+                        <tr>
+                            <td>${dataFormatada}</td>
+                            <td><strong>${baixa.funcionarioNome}</strong></td>
+                            <td class="saldo-negativo">-${this.minToTime(baixa.horas)}</td>
+                            <td>
+                                <span class="status-badge" style="background: ${baixa.tipo === 'pagamento' ? 'var(--success-color)' : baixa.tipo === 'compensacao' ? 'var(--warning-color)' : 'var(--gray-color)'}; color: white;">
+                                    ${baixa.tipo === 'pagamento' ? 'Pagamento' : baixa.tipo === 'compensacao' ? 'Compensação' : 'Ajuste'}
+                                </span>
+                            </td>
+                            <td>${baixa.observacao || '-'}</td>
+                            <td>${this.minToTime(baixa.saldoAnterior)}</td>
+                            <td class="${baixa.saldoAtual >= 0 ? 'saldo-positivo' : 'saldo-negativo'}">${this.minToTime(baixa.saldoAtual)}</td>
+                        </tr>
+                    `;
+                    tbody.insertAdjacentHTML('beforeend', html);
+                });
             },
 
             // --- Relatório de Saldos ---
@@ -1033,7 +1229,7 @@
             limparSistema: function() {
                 if (confirm('ATENÇÃO: Isso apagará TODOS os dados, funcionários e registros. Não há como desfazer.\n\nDeseja continuar?')) {
                     if(confirm('Tem certeza absoluta?')) {
-                        localStorage.removeItem('ponto_app_data_v5');
+                        localStorage.removeItem('ponto_app_data_v6');
                         location.reload();
                     }
                 }
@@ -1047,6 +1243,10 @@
                 this.saveToStorage();
                 this.checkEmptyStates();
                 this.atualizarResumoSaldos();
+                // Atualiza o banco de horas para o novo funcionário
+                if (bancoHorasAtivo) {
+                    this.calcularBancoHorasFuncionario(id, true);
+                }
                 return id;
             },
 
@@ -1054,6 +1254,13 @@
                 const func = this.data.funcionarios.find(f => f.id === funcId);
                 if (func) {
                     func.bancoHorasAtivo = !func.bancoHorasAtivo;
+                    // Se desativou o banco de horas, zera o saldo
+                    if (!func.bancoHorasAtivo) {
+                        this.data.bancoHoras[funcId] = 0;
+                    } else {
+                        // Se ativou, recalcula o banco
+                        this.calcularBancoHorasFuncionario(funcId, true);
+                    }
                     this.saveToStorage();
                     this.renderListaFuncionarios();
                     this.renderBancoHoras();
@@ -1228,6 +1435,7 @@
                 this.renderConfigEmpresa();
                 this.updateCurrentFuncName();
                 this.renderBancoHoras();
+                this.renderHistoricoBaixas();
             },
 
             renderHeaderFuncionario: function() {
@@ -1334,7 +1542,7 @@
                 
                 this.updateRowVisuals(dia);
                 this.updateDashboardTotals();
-                this.atualizarBancoHoras();
+                this.atualizarBancoHoras(); // Atualiza automaticamente o banco de horas
             },
 
             updateRowVisuals: function(dia) {
@@ -1387,7 +1595,7 @@
                     }
                 }
 
-                // Calcula banco de horas
+                // Calcula banco de horas (que agora inclui automaticamente todos os meses)
                 const bancoHoras = this.calcularBancoHorasFuncionario();
                 const saldoTotal = bancoHoras + somaSaldoMes;
 
@@ -1448,8 +1656,33 @@
                     tbody.insertAdjacentHTML('beforeend', html);
                 }
                 
+                // Adiciona linha de total de baixas
+                const baixas = this.data.baixasBancoHoras[func.id] || [];
+                const totalBaixas = baixas.reduce((total, baixa) => total + baixa.horas, 0);
+                
+                if (totalBaixas > 0) {
+                    const saldoFinal = bancoAcumulado - totalBaixas;
+                    
+                    tbody.insertAdjacentHTML('beforeend', `
+                        <tr style="background-color: #f8f9fa; font-weight: bold;">
+                            <td colspan="3" style="text-align: right;">Total de Baixas:</td>
+                            <td class="saldo-negativo">-${this.minToTime(totalBaixas)}</td>
+                            <td></td>
+                        </tr>
+                        <tr style="background-color: #e9ecef; font-weight: bold;">
+                            <td colspan="3" style="text-align: right;">Saldo Final (Após Baixas):</td>
+                            <td class="${saldoFinal >= 0 ? 'saldo-positivo' : 'saldo-negativo'}">${this.minToTime(saldoFinal)}</td>
+                            <td>
+                                <span class="status-badge" style="background: ${saldoFinal >= 0 ? '#4cc9f0' : '#f94144'}; color: white;">
+                                    ${saldoFinal >= 0 ? 'CRÉDITO' : 'DÉBITO'}
+                                </span>
+                            </td>
+                        </tr>
+                    `);
+                }
+                
                 // Atualiza o cache do banco de horas
-                this.data.bancoHoras[func.id] = bancoAcumulado;
+                this.data.bancoHoras[func.id] = bancoAcumulado - totalBaixas;
             },
 
             renderFeriados: function() {
@@ -1474,7 +1707,7 @@
                     this.saveToStorage();
                     this.renderFeriados();
                     this.renderPonto();
-                    this.atualizarBancoHoras();
+                    this.atualizarBancoHoras(); // Atualiza automaticamente o banco de horas
                     showToast('Feriado adicionado!', 'success');
                 }
             },
@@ -1484,8 +1717,8 @@
                 diasEspeciais.feriados = diasEspeciais.feriados.filter(d => d !== dateStr);
                 this.saveToStorage();
                 this.renderFeriados();
-                    this.renderPonto();
-                    this.atualizarBancoHoras();
+                this.renderPonto();
+                this.atualizarBancoHoras(); // Atualiza automaticamente o banco de horas
             },
             
             renderAtestados: function() {
@@ -1516,7 +1749,7 @@
                     this.saveToStorage();
                     this.renderAtestados();
                     this.renderPonto();
-                    this.atualizarBancoHoras();
+                    this.atualizarBancoHoras(); // Atualiza automaticamente o banco de horas
                     showToast('Atestado adicionado!', 'success');
                 } else {
                     showToast('Atestado já cadastrado para esta data/período.', 'warning');
@@ -1529,7 +1762,7 @@
                 this.saveToStorage();
                 this.renderAtestados();
                 this.renderPonto();
-                this.atualizarBancoHoras();
+                this.atualizarBancoHoras(); // Atualiza automaticamente o banco de horas
             },
 
             processarImportacao: function(mes, ano) {
@@ -1596,7 +1829,7 @@
                         document.getElementById('selectAno').value = ano;
                         
                         this.renderPonto();
-                        this.atualizarBancoHoras();
+                        this.atualizarBancoHoras(); // Atualiza automaticamente o banco de horas
                         fecharModalImportacao();
                         showToast(`${count} registros importados em ${mes+1}/${ano}!`, 'success');
                         navegar('ponto', document.querySelector('a[onclick*="ponto"]'));
@@ -1649,6 +1882,7 @@
                     delete this.data.diasEspeciais[id];
                     delete this.data.bancoHoras[id];
                     delete this.data.historicoBancoHoras[id];
+                    delete this.data.baixasBancoHoras[id];
                     
                     // Remove registros deste funcionário
                     const chavesParaRemover = Object.keys(this.data.registros).filter(chave => chave.startsWith(`${id}_`));
@@ -1763,6 +1997,7 @@
             // Atualiza o banco de horas se navegar para a seção
             if (sectionId === 'bancohoras') {
                 App.renderBancoHoras();
+                App.renderHistoricoBaixas();
             }
             
             // Atualiza o resumo de saldos se navegar para a seção
@@ -1814,6 +2049,64 @@
         }
         function fecharModalImportacao() { document.getElementById('modalImportacao').classList.remove('active'); }
 
+        function abrirModalBaixaBanco() {
+            const select = document.getElementById('baixaFuncionario');
+            select.innerHTML = '<option value="">Selecione um funcionário</option>';
+            
+            App.data.funcionarios.forEach(func => {
+                if (func.bancoHorasAtivo) {
+                    const saldo = App.calcularBancoHorasFuncionario(func.id);
+                    if (saldo > 0) {
+                        select.innerHTML += `<option value="${func.id}">${func.nome} (${App.minToTime(saldo)})</option>`;
+                    }
+                }
+            });
+            
+            if (select.options.length <= 1) {
+                showToast('Nenhum funcionário com saldo positivo no banco de horas', 'warning');
+                return;
+            }
+            
+            document.getElementById('modalBaixaBanco').classList.add('active');
+        }
+
+        function atualizarSaldoBaixa() {
+            const funcId = document.getElementById('baixaFuncionario').value;
+            if (!funcId) {
+                document.getElementById('baixaSaldoDisponivel').value = '';
+                return;
+            }
+            
+            const saldo = App.calcularBancoHorasFuncionario(funcId);
+            document.getElementById('baixaSaldoDisponivel').value = App.minToTime(saldo);
+        }
+
+        function confirmarBaixaBanco() {
+            const funcId = document.getElementById('baixaFuncionario').value;
+            const horas = parseInt(document.getElementById('baixaHoras').value);
+            const tipo = document.getElementById('baixaTipo').value;
+            const observacao = document.getElementById('baixaObservacao').value;
+            
+            if (!funcId || !horas || horas <= 0) {
+                showToast('Preencha todos os campos corretamente', 'error');
+                return;
+            }
+            
+            const sucesso = App.registrarBaixaBancoHoras(funcId, horas, tipo, observacao);
+            if (sucesso) {
+                cancelarBaixaBanco();
+            }
+        }
+
+        function cancelarBaixaBanco() {
+            document.getElementById('modalBaixaBanco').classList.remove('active');
+            document.getElementById('baixaFuncionario').value = '';
+            document.getElementById('baixaHoras').value = '';
+            document.getElementById('baixaTipo').value = 'pagamento';
+            document.getElementById('baixaObservacao').value = '';
+            document.getElementById('baixaSaldoDisponivel').value = '';
+        }
+
         function salvarFuncionarioModal() {
             const nome = document.getElementById('funcNome').value;
             const cargo = document.getElementById('funcCargo').value;
@@ -1839,7 +2132,7 @@
 
         function salvarPontoAtual() {
             App.saveToStorage();
-            App.atualizarBancoHoras();
+            App.atualizarBancoHoras(); // Atualiza automaticamente o banco de horas
             showToast('Dados salvos com sucesso', 'success');
         }
 
@@ -2493,6 +2786,29 @@
 
             // Salvar
             doc.save(`Recibo_Horas_Extras_${func.nome.replace(/\s+/g, '_')}_${App.ui.mesAtual+1}_${App.ui.anoAtual}.pdf`);
+            
+            // Após gerar o recibo, perguntar se deseja dar baixa no banco de horas
+            if (func.bancoHorasAtivo) {
+                const bancoAtual = App.calcularBancoHorasFuncionario(func.id);
+                if (bancoAtual > 0) {
+                    setTimeout(() => {
+                        if (confirm(`Deseja dar baixa no banco de horas após gerar este recibo?\n\nSaldo atual: ${App.minToTime(bancoAtual)}\nHoras no recibo: ${App.minToTime(horasExtras.total)}\n\nAs horas serão subtraídas do banco de horas.`)) {
+                            // Dar baixa das horas extras no banco de horas
+                            const sucesso = App.registrarBaixaBancoHoras(
+                                func.id, 
+                                horasExtras.total, 
+                                'pagamento', 
+                                `Recibo horas extras - ${App.ui.mesAtual+1}/${App.ui.anoAtual}`
+                            );
+                            
+                            if (sucesso) {
+                                showToast('Baixa registrada no banco de horas!', 'success');
+                            }
+                        }
+                    }, 500);
+                }
+            }
+            
             showToast('Recibo de horas extras gerado com sucesso!', 'success');
         }
 
@@ -2671,7 +2987,7 @@
             }
             
             const key = App.getKeyRegistro();
-            const registrosMes = App.data.registros[key] || {};
+            const registrosMes = this.data.registros[key] || {};
             const diasNoMes = new Date(App.ui.anoAtual, App.ui.mesAtual + 1, 0).getDate();
             
             let csv = "Data;Dia da Semana;Entrada 1;Saida 1;Entrada 2;Saida 2;Total Horas;Saldo\n";
@@ -2694,6 +3010,9 @@
             link.setAttribute("download", `ponto_${func.nome}_${App.ui.mesAtual+1}.csv`);
             link.click();
         }
+        
+        // Inicializar evento para atualizar saldo ao selecionar funcionário na modal de baixa
+        document.getElementById('baixaFuncionario').addEventListener('change', atualizarSaldoBaixa);
     </script>
 </body>
 </html>
