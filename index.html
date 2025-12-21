@@ -103,6 +103,8 @@
         .row-feriado td { color: #880e4f; font-weight: 600; }
         .row-atestado { background: #e6f7ff !important; }
         .row-atestado td { color: #1890ff; font-weight: 600; }
+        .row-folga { background: #fff8e1 !important; }
+        .row-folga td { color: #ff8f00; font-weight: 600; }
 
         .saldo-positivo { color: var(--success-color); font-weight: bold; }
         .saldo-negativo { color: var(--danger-color); font-weight: bold; }
@@ -291,6 +293,23 @@
         </div>
     </div>
 
+    <!-- Modal para Configurar Expediente -->
+    <div id="modalConfigExpediente" class="modal-overlay" style="z-index: 2000;">
+        <div class="modal">
+            <button class="modal-close" onclick="fecharModalExpediente()">&times;</button>
+            <h2 style="margin-bottom: 20px;"><i class="fas fa-clock"></i> Configurar Expediente</h2>
+            
+            <div id="expedienteContent">
+                <!-- O conteúdo será gerado dinamicamente -->
+            </div>
+            
+            <div class="btn-group" style="margin-top: 20px;">
+                <button class="btn btn-success" onclick="salvarExpediente()"><i class="fas fa-save"></i> Salvar Configuração</button>
+                <button class="btn btn-warning" onclick="fecharModalExpediente()"><i class="fas fa-times"></i> Cancelar</button>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <header class="app-header">
             <div class="logo">
@@ -328,6 +347,7 @@
                 <nav class="menu">
                     <a href="#" class="menu-item active" onclick="navegar('ponto', this)"><i class="fas fa-calendar-check"></i> Registro</a>
                     <a href="#" class="menu-item" onclick="navegar('feriados', this)"><i class="fas fa-calendar-star"></i> Dias Especiais</a>
+                    <a href="#" class="menu-item" onclick="navegar('expediente', this)"><i class="fas fa-clock"></i> Expediente</a>
                     <a href="#" class="menu-item" onclick="navegar('funcionarios', this)"><i class="fas fa-users"></i> Funcionários</a>
                     <a href="#" class="menu-item" onclick="navegar('bancohoras', this)"><i class="fas fa-piggy-bank"></i> Banco de Horas</a>
                     <a href="#" class="menu-item" onclick="navegar('importacao', this)"><i class="fas fa-file-excel"></i> Importar Excel</a>
@@ -407,7 +427,7 @@
                                 <li><span class="saldo-negativo">Vermelho:</span> Horas faltantes (saldo negativo)</li>
                                 <li>O saldo já considera a subtração da jornada diária</li>
                                 <li>Domingos/Feriados: 100% hora extra se trabalhado</li>
-                                <li>Sábado após 13:00: hora extra</li>
+                                <li>Sábado conforme expediente configurado</li>
                                 <li>Saldo acumulado: positivo e negativo se compensam automaticamente</li>
                             </ul>
                         </div>
@@ -418,7 +438,7 @@
                     <div class="section-header">
                         <div class="section-title">
                             <i class="fas fa-calendar-star" style="background: linear-gradient(135deg, var(--special-color), #a2d2ff);"></i>
-                            <h2>Dias Especiais (Feriados e Atestados) - <span id="currentFuncName">Funcionário</span></h2>
+                            <h2>Dias Especiais (Feriados, Folgas e Atestados) - <span id="currentFuncName">Funcionário</span></h2>
                         </div>
                     </div>
                     
@@ -433,8 +453,8 @@
                     
                     <div id="feriadosContent">
                         <div class="card" style="margin-bottom: 30px;">
-                            <h3>Cadastrar Feriado / Folga</h3>
-                            <p style="margin-bottom: 20px; color: #666;">Os dias cadastrados aqui terão cálculo diferenciado (100% hora extra se trabalhados). Adicione apenas dias que não sejam Domingos (o sistema já identifica domingos automaticamente).</p>
+                            <h3>Cadastrar Feriado</h3>
+                            <p style="margin-bottom: 20px; color: #666;">Os dias cadastrados aqui terão cálculo diferenciado (100% hora extra se trabalhados).</p>
                             <div style="display: flex; gap: 15px; align-items: flex-end;">
                                 <div style="flex: 1;">
                                     <label>Data do Feriado</label>
@@ -451,6 +471,27 @@
                                 <div class="tag-list" id="listaFeriados"></div>
                             </div>
                         </div>
+
+                        <div class="card" style="margin-bottom: 30px;">
+                            <h3>Cadastrar Folga</h3>
+                            <p style="margin-bottom: 20px; color: #666;">Dias de folga concedidos (não são feriados nem domingos). Se trabalhados, serão 100% hora extra.</p>
+                            <div style="display: flex; gap: 15px; align-items: flex-end;">
+                                <div style="flex: 1;">
+                                    <label>Data da Folga</label>
+                                    <input type="date" id="inputFolgaData" class="form-control" style="margin-bottom: 0;">
+                                </div>
+                                <div style="flex: 2;">
+                                    <label>Descrição</label>
+                                    <input type="text" id="inputFolgaDesc" class="form-control" placeholder="Ex: Folga compensada, Folga antecipada" style="margin-bottom: 0;">
+                                </div>
+                                <button class="btn btn-warning" onclick="App.adicionarFolga()"><i class="fas fa-umbrella-beach"></i> Adicionar Folga</button>
+                            </div>
+                            <div style="margin-top: 30px;">
+                                <h4>Folgas Cadastradas</h4>
+                                <div class="tag-list" id="listaFolgas"></div>
+                            </div>
+                        </div>
+
                         <div class="card">
                             <h3>Cadastrar Atestado Médico</h3>
                             <p style="margin-bottom: 20px; color: #666;">Abonará as horas da jornada normal nos dias e período informados.</p>
@@ -472,6 +513,72 @@
                             <div style="margin-top: 30px;">
                                 <h4>Atestados Cadastrados</h4>
                                 <div class="tag-list" id="listaAtestados"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- NOVA SEÇÃO: Configuração de Expediente -->
+                <section id="expediente" class="content-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <i class="fas fa-clock" style="background: linear-gradient(135deg, var(--warning-color), #f3722c);"></i>
+                            <h2>Configuração de Expediente</h2>
+                        </div>
+                        <button class="btn btn-primary" onclick="abrirModalExpediente()"><i class="fas fa-cog"></i> Configurar Expediente</button>
+                    </div>
+
+                    <div id="expedienteEmptyState" class="empty-state" style="display: block;">
+                        <i class="fas fa-user-slash"></i>
+                        <h3>Nenhum funcionário selecionado</h3>
+                        <p>Selecione ou cadastre um funcionário para configurar o expediente.</p>
+                        <button class="btn btn-primary" onclick="navegar('funcionarios', document.querySelector('a[onclick*=\"funcionarios\"]'))">
+                            <i class="fas fa-user-plus"></i> Cadastrar Funcionário
+                        </button>
+                    </div>
+
+                    <div id="expedienteContent" style="display: none;">
+                        <div class="card">
+                            <h3><i class="fas fa-calendar-week"></i> Horários de Expediente Configurados</h3>
+                            <p style="margin-bottom: 20px; color: #666;">Configure os horários de trabalho para cada dia da semana. O sábado será calculado conforme os horários definidos abaixo.</p>
+                            
+                            <div class="table-wrapper">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>Dia da Semana</th>
+                                            <th>Trabalha?</th>
+                                            <th>Entrada 1</th>
+                                            <th>Saída 1</th>
+                                            <th>Entrada 2</th>
+                                            <th>Saída 2</th>
+                                            <th>Jornada Diária</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabelaExpedienteBody">
+                                        <!-- Será preenchido via JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                                <h4><i class="fas fa-info-circle"></i> Como funciona:</h4>
+                                <ul style="margin-top: 10px; color: #666; padding-left: 20px;">
+                                    <li><strong>Segunda a Sexta:</strong> Horário padrão conforme configuração</li>
+                                    <li><strong>Sábado:</strong> Considerado hora extra apenas se trabalhar além do horário configurado</li>
+                                    <li><strong>Domingo:</strong> Sempre 100% hora extra se trabalhado</li>
+                                    <li><strong>Feriados/Folgas:</strong> 100% hora extra se trabalhado</li>
+                                    <li>Se não configurar, usará jornada padrão de 8h/dia (seg-sex) e 4h para sábado</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="btn-group" style="margin-top: 20px;">
+                                <button class="btn btn-primary" onclick="abrirModalExpediente()">
+                                    <i class="fas fa-edit"></i> Editar Configuração
+                                </button>
+                                <button class="btn btn-warning" onclick="App.resetarExpediente()">
+                                    <i class="fas fa-undo"></i> Restaurar Padrão
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -591,8 +698,8 @@
                         <p style="margin-bottom: 20px; color: #666;">
                             O sistema identifica dias automaticamente. <br>
                             <strong>Regras aplicadas:</strong><br>
-                            - Domingos/Feriados trabalhados = 100% Extra.<br>
-                            - Sábados após 13:00 = Extra.<br>
+                            - Domingos/Feriados/Folgas trabalhados = 100% Extra.<br>
+                            - Sábados conforme expediente configurado.<br>
                             - Cálculo automático: saldo positivo e negativo se compensam
                         </p>
                         
@@ -837,7 +944,8 @@
                 config: {
                     funcionarioAtualId: null,
                     backupAutoAtivo: true
-                }
+                },
+                expediente: {} // Nova propriedade para armazenar configurações de expediente
             },
             
             ui: {
@@ -872,6 +980,14 @@
                 
                 // Configurar datas padrão para o modal de período
                 this.configurarDatasPadraoPeriodo();
+                
+                // CORREÇÃO: Atualizar exibição do banco de horas na inicialização
+                setTimeout(() => {
+                    this.atualizarExibicaoBancoHoras();
+                }, 500);
+                
+                // Inicializar expediente padrão se não existir
+                this.inicializarExpedientePadrao();
             },
             
             configurarDatasPadraoPeriodo: function() {
@@ -900,14 +1016,138 @@
                 });
             },
 
+            // CORREÇÃO: Atualizar exibição do banco de horas
+            atualizarExibicaoBancoHoras: function() {
+                const func = this.getFuncionarioAtual();
+                if (!func) return;
+                
+                // Recalcular banco de horas
+                const bancoHoras = this.calcularBancoHorasFuncionario(func.id, true);
+                
+                // Atualizar o resumo no painel
+                document.getElementById('resumoBanco').textContent = this.minToTime(bancoHoras);
+                
+                // Atualizar a tabela de banco de horas
+                this.renderBancoHoras();
+                
+                // Atualizar o saldo total
+                this.updateDashboardTotals();
+                
+                console.log(`Banco de horas atualizado para ${func.nome}: ${this.minToTime(bancoHoras)}`);
+            },
+
             // --- Atualiza banco de horas para TODOS os funcionários ---
             atualizarBancoHorasTodosFuncionarios: function() {
                 this.data.funcionarios.forEach(func => {
                     if (func.bancoHorasAtivo) {
                         this.calcularBancoHorasFuncionario(func.id, true);
+                    } else {
+                        // Se banco de horas está inativo, zera o saldo
+                        this.data.bancoHoras[func.id] = 0;
                     }
                 });
                 this.saveToStorage();
+                this.atualizarExibicaoBancoHoras();
+            },
+
+            // --- Inicializar expediente padrão ---
+            inicializarExpedientePadrao: function() {
+                // Se não existir expediente no storage, inicializa com valores padrão
+                if (!this.data.expediente) {
+                    this.data.expediente = {};
+                }
+            },
+
+            // --- Configuração de expediente ---
+            getExpedienteFuncionario: function(funcId = null) {
+                const id = funcId || this.data.config.funcionarioAtualId;
+                if (!id) return null;
+                
+                // Se não existir expediente para este funcionário, cria um padrão
+                if (!this.data.expediente[id]) {
+                    this.data.expediente[id] = this.criarExpedientePadrao();
+                }
+                
+                return this.data.expediente[id];
+            },
+
+            criarExpedientePadrao: function() {
+                // Expediente padrão: segunda a sexta 8h, sábado 4h
+                return {
+                    segunda: { trab: true, e1: "08:00", s1: "12:00", e2: "13:00", s2: "17:00", jornada: 8 },
+                    terca: { trab: true, e1: "08:00", s1: "12:00", e2: "13:00", s2: "17:00", jornada: 8 },
+                    quarta: { trab: true, e1: "08:00", s1: "12:00", e2: "13:00", s2: "17:00", jornada: 8 },
+                    quinta: { trab: true, e1: "08:00", s1: "12:00", e2: "13:00", s2: "17:00", jornada: 8 },
+                    sexta: { trab: true, e1: "08:00", s1: "12:00", e2: "13:00", s2: "17:00", jornada: 8 },
+                    sabado: { trab: true, e1: "08:00", s1: "12:00", e2: null, s2: null, jornada: 4 },
+                    domingo: { trab: false, e1: null, s1: null, e2: null, s2: null, jornada: 0 }
+                };
+            },
+
+            salvarExpedienteFuncionario: function(funcId, expediente) {
+                this.data.expediente[funcId] = expediente;
+                this.saveToStorage();
+                this.renderExpediente();
+                showToast('Expediente salvo com sucesso!', 'success');
+            },
+
+            resetarExpediente: function(funcId = null) {
+                const id = funcId || this.data.config.funcionarioAtualId;
+                if (!id) return;
+                
+                if (confirm('Deseja restaurar o expediente padrão para este funcionário?')) {
+                    this.data.expediente[id] = this.criarExpedientePadrao();
+                    this.saveToStorage();
+                    this.renderExpediente();
+                    this.renderPonto(); // Recalcular pontos com novo expediente
+                    showToast('Expediente restaurado para o padrão!', 'success');
+                }
+            },
+
+            renderExpediente: function() {
+                const func = this.getFuncionarioAtual();
+                if (!func) {
+                    document.getElementById('expedienteEmptyState').style.display = 'block';
+                    document.getElementById('expedienteContent').style.display = 'none';
+                    return;
+                }
+                
+                document.getElementById('expedienteEmptyState').style.display = 'none';
+                document.getElementById('expedienteContent').style.display = 'block';
+                
+                const expediente = this.getExpedienteFuncionario();
+                const tbody = document.getElementById('tabelaExpedienteBody');
+                tbody.innerHTML = '';
+                
+                const dias = [
+                    { chave: 'segunda', nome: 'Segunda-feira' },
+                    { chave: 'terca', nome: 'Terça-feira' },
+                    { chave: 'quarta', nome: 'Quarta-feira' },
+                    { chave: 'quinta', nome: 'Quinta-feira' },
+                    { chave: 'sexta', nome: 'Sexta-feira' },
+                    { chave: 'sabado', nome: 'Sábado' },
+                    { chave: 'domingo', nome: 'Domingo' }
+                ];
+                
+                dias.forEach(dia => {
+                    const config = expediente[dia.chave];
+                    const html = `
+                        <tr>
+                            <td><strong>${dia.nome}</strong></td>
+                            <td>
+                                <span class="status-badge" style="background: ${config.trab ? 'var(--success-color)' : 'var(--danger-color)'}; color: white;">
+                                    ${config.trab ? 'SIM' : 'NÃO'}
+                                </span>
+                            </td>
+                            <td>${config.e1 || '-'}</td>
+                            <td>${config.s1 || '-'}</td>
+                            <td>${config.e2 || '-'}</td>
+                            <td>${config.s2 || '-'}</td>
+                            <td><strong>${config.jornada}h</strong></td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += html;
+                });
             },
 
             // --- Monitor de Atividade ---
@@ -954,11 +1194,18 @@
 
             // --- Gerenciamento de Dados ---
             saveToStorage: function() {
-                localStorage.setItem('ponto_app_data_v6', JSON.stringify(this.data));
+                localStorage.setItem('ponto_app_data_v8', JSON.stringify(this.data)); // Versão atualizada para v8
             },
 
             loadFromStorage: function() {
-                const raw = localStorage.getItem('ponto_app_data_v6');
+                // Primeiro tenta carregar a versão v8
+                let raw = localStorage.getItem('ponto_app_data_v8');
+                
+                // Se não encontrar v8, tenta v7 para compatibilidade
+                if (!raw) {
+                    raw = localStorage.getItem('ponto_app_data_v7');
+                }
+                
                 if (raw) {
                     const parsed = JSON.parse(raw);
                     this.data.empresa = parsed.empresa || this.data.empresa;
@@ -969,6 +1216,7 @@
                     this.data.historicoBancoHoras = parsed.historicoBancoHoras || {};
                     this.data.baixasBancoHoras = parsed.baixasBancoHoras || {};
                     this.data.config = parsed.config || {};
+                    this.data.expediente = parsed.expediente || {}; // Nova propriedade
                     
                     // Garantir que todos os funcionários tenham a propriedade bancoHorasAtivo
                     this.data.funcionarios.forEach(func => {
@@ -976,7 +1224,35 @@
                             func.bancoHorasAtivo = true;
                         }
                     });
+                    
+                    // Se veio da v7, converte estrutura antiga para nova
+                    if (!parsed.expediente && localStorage.getItem('ponto_app_data_v7')) {
+                        this.migrarDadosV7paraV8();
+                    }
                 }
+            },
+
+            // Migração de dados da versão 7 para 8
+            migrarDadosV7paraV8: function() {
+                console.log('Migrando dados da versão 7 para 8...');
+                
+                // Inicializar expediente para todos os funcionários existentes
+                this.data.funcionarios.forEach(func => {
+                    this.data.expediente[func.id] = this.criarExpedientePadrao();
+                });
+                
+                // Converter dias especiais antigos para nova estrutura (adicionando folgas)
+                Object.keys(this.data.diasEspeciais).forEach(funcId => {
+                    if (this.data.diasEspeciais[funcId]) {
+                        // Garantir que tenha a propriedade folgas
+                        if (!this.data.diasEspeciais[funcId].folgas) {
+                            this.data.diasEspeciais[funcId].folgas = [];
+                        }
+                    }
+                });
+                
+                this.saveToStorage();
+                console.log('Migração concluída!');
             },
 
             // --- Verificação de estados vazios ---
@@ -1003,6 +1279,16 @@
                     document.getElementById('feriadosContent').style.display = 'block';
                 }
                 
+                // Expediente
+                if (!hasFuncionarioAtual) {
+                    document.getElementById('expedienteEmptyState').style.display = 'block';
+                    document.getElementById('expedienteContent').style.display = 'none';
+                } else {
+                    document.getElementById('expedienteEmptyState').style.display = 'none';
+                    document.getElementById('expedienteContent').style.display = 'block';
+                    this.renderExpediente();
+                }
+                
                 // Banco de Horas
                 if (!hasFuncionarioAtual) {
                     document.getElementById('bancohorasEmptyState').style.display = 'block';
@@ -1027,10 +1313,10 @@
             // Métodos auxiliares para dias especiais por funcionário
             getDiasEspeciaisFuncionario: function(funcId = null) {
                 const id = funcId || this.data.config.funcionarioAtualId;
-                if (!id) return { feriados: [], atestados: [] };
+                if (!id) return { feriados: [], folgas: [], atestados: [] };
                 
                 if (!this.data.diasEspeciais[id]) {
-                    this.data.diasEspeciais[id] = { feriados: [], atestados: [] };
+                    this.data.diasEspeciais[id] = { feriados: [], folgas: [], atestados: [] };
                 }
                 return this.data.diasEspeciais[id];
             },
@@ -1041,8 +1327,10 @@
                 if (!id) return 0;
                 
                 const func = this.data.funcionarios.find(f => f.id === id);
-                if (!func || !func.bancoHorasAtivo) {
-                    // Se banco de horas está inativo, zera o saldo
+                if (!func) return 0;
+                
+                // Se banco de horas está inativo, retorna 0
+                if (!func.bancoHorasAtivo) {
                     this.data.bancoHoras[id] = 0;
                     return 0;
                 }
@@ -1092,7 +1380,7 @@
                 };
             },
 
-            // CÁLCULO DO SALDO DO MÊS MELHORADO
+            // CÁLCULO DO SALDO DO MÊS MELHORADO COM EXPEDIENTE
             calcularSaldoMes: function(funcId, ano, mes) {
                 const func = this.data.funcionarios.find(f => f.id === funcId);
                 if (!func) return 0;
@@ -1106,7 +1394,7 @@
                 for (let d = 1; d <= diasNoMes; d++) {
                     const dataObj = new Date(ano, mes, d);
                     const reg = registrosMes[d] || {};
-                    const calculo = this.calcularDiaMelhorado(reg, func.jornada, dataObj, funcId);
+                    const calculo = this.calcularDiaComExpediente(reg, func.jornada, dataObj, funcId);
                     
                     saldoMes += calculo.saldo;
                 }
@@ -1114,8 +1402,8 @@
                 return saldoMes;
             },
 
-            // CÁLCULO DO DIA MELHORADO - LÓGICA DE SUBTRAÇÃO DE HORAS FALTANTES
-            calcularDiaMelhorado: function(reg, jornadaHoras, dataObj, funcId = null) {
+            // NOVO MÉTODO: Cálculo considerando expediente configurado
+            calcularDiaComExpediente: function(reg, jornadaPadrao, dataObj, funcId = null) {
                 const y = dataObj.getFullYear();
                 const m = (dataObj.getMonth() + 1).toString().padStart(2, '0');
                 const d = dataObj.getDate().toString().padStart(2, '0');
@@ -1125,8 +1413,15 @@
                 const isDomingo = diaSemana === 0;
                 const isSabado = diaSemana === 6;
                 const isFeriado = this.isFeriado(dataFormatada, funcId);
+                const isFolga = this.isFolga(dataFormatada, funcId);
                 const minutosAbonados = this.isAtestado(dataFormatada, funcId); 
                 const isAtestadoDay = minutosAbonados > 0; 
+
+                // Obter configuração de expediente para este dia
+                const diasSemana = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+                const diaSemanaChave = diasSemana[diaSemana];
+                const expediente = this.getExpedienteFuncionario(funcId);
+                const configDia = expediente ? expediente[diaSemanaChave] : null;
 
                 let trabalhado = 0;
                 if (reg) {
@@ -1136,10 +1431,10 @@
                 
                 const teveBatida = trabalhado > 0;
                 let saldo = 0;
-                let jornadaEfetiva = jornadaHoras * 60;
+                let jornadaEfetiva = jornadaPadrao * 60;
                 let observacao = '';
 
-                // **LÓGICA MELHORADA DE CÁLCULO DE SALDO**
+                // **LÓGICA MELHORADA COM EXPEDIENTE CONFIGURADO**
                 if (isAtestadoDay) {
                     jornadaEfetiva = minutosAbonados; 
                     if (!teveBatida) {
@@ -1151,31 +1446,45 @@
                         observacao = 'Trabalhou com atestado';
                     }
                 }
-                else if (isDomingo || isFeriado) {
-                    // Para domingos e feriados, toda hora trabalhada é extra (100%)
+                else if (isDomingo || isFeriado || isFolga) {
+                    // Para domingos, feriados e folgas, toda hora trabalhada é extra (100%)
                     jornadaEfetiva = 0;
                     if (teveBatida) {
                         saldo = trabalhado; // 100% extra
-                        observacao = isDomingo ? 'Domingo' : 'Feriado';
+                        observacao = isDomingo ? 'Domingo' : isFeriado ? 'Feriado' : 'Folga';
                     } else {
-                        observacao = isDomingo ? 'Domingo' : 'Feriado';
+                        observacao = isDomingo ? 'Domingo' : isFeriado ? 'Feriado' : 'Folga';
                     }
                 }
                 else if (isSabado) {
-                    const jornadaSabado = 4 * 60; // 4 horas para sábado
-                    if(teveBatida) {
-                        // Para sábados, calcula horas extras a partir das 13:00
-                        const horasExtrasSabado = this.calcularHorasExtrasSabado(reg, jornadaSabado);
-                        saldo = horasExtrasSabado;
-                        observacao = saldo > 0 ? 'Sábado (extra)' : 'Sábado';
+                    // Sábado: usa expediente configurado ou padrão de 4h
+                    if (configDia && configDia.trab) {
+                        jornadaEfetiva = configDia.jornada * 60;
+                        if (teveBatida) {
+                            saldo = trabalhado - jornadaEfetiva;
+                            observacao = saldo > 0 ? 'Sábado (extra)' : (saldo < 0 ? 'Sábado (falta)' : 'Sábado');
+                        } else {
+                            // Se não trabalhou no sábado configurado, gera saldo negativo
+                            saldo = -jornadaEfetiva;
+                            observacao = 'Sábado (falta)';
+                        }
                     } else {
-                        // Se não trabalhou no sábado, não gera saldo negativo
-                        saldo = 0;
-                        observacao = 'Sábado';
+                        // Sábado não trabalhado no expediente
+                        if (teveBatida) {
+                            saldo = trabalhado; // 100% extra se trabalhar em sábado não configurado
+                            observacao = 'Sábado (extra)';
+                        } else {
+                            observacao = 'Sábado';
+                        }
                     }
                 }
                 else {
                     // Dias normais: horas extras são o que excede a jornada
+                    // Usa jornada do expediente se configurado
+                    if (configDia && configDia.trab) {
+                        jornadaEfetiva = configDia.jornada * 60;
+                    }
+                    
                     if (teveBatida) { 
                         saldo = trabalhado - jornadaEfetiva;
                         observacao = saldo > 0 ? 'Extra' : (saldo < 0 ? 'Falta' : 'Normal');
@@ -1190,13 +1499,19 @@
                     trabalhado: trabalhado,
                     saldo: saldo, // Este é o saldo líquido do dia (pode ser positivo ou negativo)
                     teveBatida: teveBatida,
-                    isSpecial: isDomingo || isFeriado,
+                    isSpecial: isDomingo || isFeriado || isFolga,
                     isAtestadoDay: isAtestadoDay,
                     isDomingo: isDomingo,
                     isFeriado: isFeriado,
+                    isFolga: isFolga,
                     isSabado: isSabado,
                     observacao: observacao
                 };
+            },
+
+            // Método original mantido para compatibilidade
+            calcularDiaMelhorado: function(reg, jornadaHoras, dataObj, funcId = null) {
+                return this.calcularDiaComExpediente(reg, jornadaHoras, dataObj, funcId);
             },
 
             atualizarBancoHoras: function(funcId = null) {
@@ -1209,6 +1524,9 @@
                 
                 // Atualiza o resumo de saldos
                 this.atualizarResumoSaldos();
+                
+                // Atualiza a exibição
+                this.atualizarExibicaoBancoHoras();
                 
                 // Renderiza novamente a seção de banco de horas se estiver ativa
                 if (document.getElementById('bancohoras').classList.contains('active')) {
@@ -1410,7 +1728,8 @@
             limparSistema: function() {
                 if (confirm('ATENÇÃO: Isso apagará TODOS os dados, funcionários e registros. Não há como desfazer.\n\nDeseja continuar?')) {
                     if(confirm('Tem certeza absoluta?')) {
-                        localStorage.removeItem('ponto_app_data_v6');
+                        localStorage.removeItem('ponto_app_data_v8');
+                        localStorage.removeItem('ponto_app_data_v7');
                         location.reload();
                     }
                 }
@@ -1421,6 +1740,10 @@
                 const novo = { id, nome, cargo, codigo, jornada, bancoHorasAtivo };
                 this.data.funcionarios.push(novo);
                 this.data.config.funcionarioAtualId = id;
+                
+                // Criar expediente padrão para o novo funcionário
+                this.data.expediente[id] = this.criarExpedientePadrao();
+                
                 this.saveToStorage();
                 this.checkEmptyStates();
                 this.atualizarResumoSaldos();
@@ -1448,6 +1771,7 @@
                     this.renderBancoHoras();
                     this.atualizarResumoSaldos();
                     this.atualizarSelectFuncionariosPeriodo();
+                    this.atualizarExibicaoBancoHoras();
                     showToast(`Banco de horas ${func.bancoHorasAtivo ? 'ativado' : 'desativado'} para ${func.nome}`, 'success');
                 }
             },
@@ -1485,6 +1809,11 @@
                 return diasEspeciais.feriados.includes(dateStr);
             },
             
+            isFolga: function(dateStr, funcId = null) {
+                const diasEspeciais = this.getDiasEspeciaisFuncionario(funcId || this.data.config.funcionarioAtualId);
+                return diasEspeciais.folgas.includes(dateStr);
+            },
+            
             isAtestado: function(dateStr, funcId = null) {
                 const diasEspeciais = this.getDiasEspeciaisFuncionario(funcId || this.data.config.funcionarioAtualId);
                 const checkDate = new Date(dateStr + 'T00:00:00'); 
@@ -1499,7 +1828,7 @@
                 return 0; 
             },
 
-            // Nova função para calcular horas extras em sábados a partir das 13:00
+            // Nova função para calcular horas extras em sábados considerando expediente
             calcularHorasExtrasSabado: function(reg, jornadaSabado) {
                 let totalMinutos = 0;
                 
@@ -1507,16 +1836,7 @@
                 if (reg.e1 && reg.s1) totalMinutos += (this.timeToMin(reg.s1) - this.timeToMin(reg.e1));
                 if (reg.e2 && reg.s2) totalMinutos += (this.timeToMin(reg.s2) - this.timeToMin(reg.e2));
                 
-                // Se trabalhou após as 13:00, considera como hora extra
-                let horasExtras = 0;
-                if (reg.e1) {
-                    const entrada1Min = this.timeToMin(reg.e1);
-                    if (entrada1Min >= 13 * 60) { // 13:00 em minutos
-                        horasExtras = totalMinutos - jornadaSabado;
-                    }
-                }
-                
-                return horasExtras > 0 ? horasExtras : totalMinutos - jornadaSabado;
+                return totalMinutos - (jornadaSabado * 60);
             },
 
             setupDates: function() {
@@ -1547,11 +1867,13 @@
                 this.renderPonto();
                 this.renderListaFuncionarios();
                 this.renderFeriados();
+                this.renderFolgas();
                 this.renderAtestados();
                 this.renderConfigEmpresa();
                 this.updateCurrentFuncName();
                 this.renderBancoHoras();
                 this.renderHistoricoBaixas();
+                this.renderExpediente();
             },
 
             renderHeaderFuncionario: function() {
@@ -1617,9 +1939,10 @@
                     const dd = d.toString().padStart(2, '0');
                     const dataFormatada = `${y}-${m}-${dd}`;
                     const isFeriado = this.isFeriado(dataFormatada);
+                    const isFolga = this.isFolga(dataFormatada);
 
                     const reg = registrosMes[d] || {};
-                    const calculo = this.calcularDiaMelhorado(reg, func.jornada, dataObj);
+                    const calculo = this.calcularDiaComExpediente(reg, func.jornada, dataObj);
                     const isAtestadoDay = calculo.isAtestadoDay;
 
                     const diaNome = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][diaSemana];
@@ -1627,9 +1950,12 @@
                     let rowClass = '';
                     if (isDomingo) rowClass = 'row-domingo';
                     if (isFeriado) rowClass = 'row-feriado';
+                    if (isFolga) rowClass = 'row-folga';
                     if (isAtestadoDay) rowClass = 'row-atestado';
 
-                    const diaExtraInfo = isFeriado ? '<i class="fas fa-star" style="font-size:10px; color:var(--special-color)"></i>' : isAtestadoDay ? '<i class="fas fa-notes-medical" style="font-size:10px; color:#1890ff"></i>' : '';
+                    const diaExtraInfo = isFeriado ? '<i class="fas fa-star" style="font-size:10px; color:var(--special-color)"></i>' : 
+                                      isFolga ? '<i class="fas fa-umbrella-beach" style="font-size:10px; color:#ff8f00"></i>' : 
+                                      isAtestadoDay ? '<i class="fas fa-notes-medical" style="font-size:10px; color:#1890ff"></i>' : '';
 
                     const html = `
                         <tr class="${rowClass}" id="row-day-${d}">
@@ -1671,7 +1997,7 @@
                 const key = this.getKeyRegistro();
                 const reg = this.data.registros[key][dia] || {};
                 
-                const calculo = this.calcularDiaMelhorado(reg, func.jornada, dataObj);
+                const calculo = this.calcularDiaComExpediente(reg, func.jornada, dataObj);
                 
                 const colTotal = row.querySelector('.col-total');
                 const colSaldo = row.querySelector('.col-saldo');
@@ -1701,7 +2027,7 @@
                 for (let d = 1; d <= diasNoMes; d++) {
                     const dataObj = new Date(this.ui.anoAtual, this.ui.mesAtual, d);
                     const reg = registrosMes[d] || {};
-                    const calculo = this.calcularDiaMelhorado(reg, func.jornada, dataObj);
+                    const calculo = this.calcularDiaComExpediente(reg, func.jornada, dataObj);
 
                     const diaSemana = dataObj.getDay();
                     const isDomingo = diaSemana === 0;
@@ -1709,8 +2035,9 @@
                     const m = (dataObj.getMonth() + 1).toString().padStart(2, '0');
                     const dd = d.toString().padStart(2, '0');
                     const isFeriado = this.isFeriado(`${y}-${m}-${dd}`);
+                    const isFolga = this.isFolga(`${y}-${m}-${dd}`);
 
-                    if (calculo.teveBatida || calculo.isAtestadoDay || (!isDomingo && !isFeriado)) { 
+                    if (calculo.teveBatida || calculo.isAtestadoDay || (!isDomingo && !isFeriado && !isFolga)) { 
                          somaTrabalhada += calculo.trabalhado;
                          somaSaldoMes += calculo.saldo;
                     }
@@ -1800,10 +2127,35 @@
                             </td>
                         </tr>
                     `);
+                } else if (mesesRegistrados.length > 0) {
+                    // Se não há baixas, mas há meses registrados, mostra o saldo final
+                    tbody.insertAdjacentHTML('beforeend', `
+                        <tr style="background-color: #e9ecef; font-weight: bold;">
+                            <td colspan="3" style="text-align: right;">Saldo Final:</td>
+                            <td class="${bancoAcumulado >= 0 ? 'saldo-positivo' : 'saldo-negativo'}">${this.minToTime(bancoAcumulado)}</td>
+                            <td>
+                                <span class="status-badge" style="background: ${bancoAcumulado >= 0 ? '#4cc9f0' : '#f94144'}; color: white;">
+                                    ${bancoAcumulado >= 0 ? 'CRÉDITO' : 'DÉBITO'}
+                                </span>
+                            </td>
+                        </tr>
+                    `);
+                } else {
+                    // Se não há registros
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: #666; padding: 40px;">
+                                <i class="fas fa-database" style="font-size: 40px; margin-bottom: 10px; display: block;"></i>
+                                <h4>Nenhum registro encontrado</h4>
+                                <p>Registre pontos para ver o histórico do banco de horas</p>
+                            </td>
+                        </tr>
+                    `;
                 }
                 
                 // Atualiza o cache do banco de horas
-                this.data.bancoHoras[func.id] = bancoAcumulado - totalBaixas;
+                const saldoFinal = baixas.length > 0 ? bancoAcumulado - totalBaixas : bancoAcumulado;
+                this.data.bancoHoras[func.id] = saldoFinal;
             },
 
             renderFeriados: function() {
@@ -1814,6 +2166,17 @@
                     const [y, m, d] = dateStr.split('-');
                     const display = `${d}/${m}/${y}`;
                     list.innerHTML += `<div class="tag">${display} <i class="fas fa-times" onclick="App.removerFeriado('${dateStr}')"></i></div>`;
+                });
+            },
+
+            renderFolgas: function() {
+                const list = document.getElementById('listaFolgas');
+                list.innerHTML = '';
+                const diasEspeciais = this.getDiasEspeciaisFuncionario();
+                diasEspeciais.folgas.sort().forEach(dateStr => {
+                    const [y, m, d] = dateStr.split('-');
+                    const display = `${d}/${m}/${y}`;
+                    list.innerHTML += `<div class="tag" style="background:#fff8e1;">${display} <i class="fas fa-times" onclick="App.removerFolga('${dateStr}')"></i></div>`;
                 });
             },
 
@@ -1838,6 +2201,31 @@
                 diasEspeciais.feriados = diasEspeciais.feriados.filter(d => d !== dateStr);
                 this.saveToStorage();
                 this.renderFeriados();
+                this.renderPonto();
+                this.atualizarBancoHoras(); // Atualiza automaticamente o banco de horas
+            },
+
+            adicionarFolga: function() {
+                const data = document.getElementById('inputFolgaData').value;
+                if(!data) return showToast('Selecione uma data', 'error');
+                
+                const diasEspeciais = this.getDiasEspeciaisFuncionario();
+                
+                if(!diasEspeciais.folgas.includes(data)) {
+                    diasEspeciais.folgas.push(data);
+                    this.saveToStorage();
+                    this.renderFolgas();
+                    this.renderPonto();
+                    this.atualizarBancoHoras(); // Atualiza automaticamente o banco de horas
+                    showToast('Folga adicionada!', 'success');
+                }
+            },
+
+            removerFolga: function(dateStr) {
+                const diasEspeciais = this.getDiasEspeciaisFuncionario();
+                diasEspeciais.folgas = diasEspeciais.folgas.filter(d => d !== dateStr);
+                this.saveToStorage();
+                this.renderFolgas();
                 this.renderPonto();
                 this.atualizarBancoHoras(); // Atualiza automaticamente o banco de horas
             },
@@ -1999,11 +2387,12 @@
             removerFuncionario: function(id) {
                 if (confirm('Tem certeza? Isso apagará o cadastro, registros e banco de horas deste funcionário.')) {
                     this.data.funcionarios = this.data.funcionarios.filter(f => f.id !== id);
-                    // Remove também os dias especiais e banco de horas deste funcionário
+                    // Remove também os dias especiais, banco de horas e expediente deste funcionário
                     delete this.data.diasEspeciais[id];
                     delete this.data.bancoHoras[id];
                     delete this.data.historicoBancoHoras[id];
                     delete this.data.baixasBancoHoras[id];
+                    delete this.data.expediente[id];
                     
                     // Remove registros deste funcionário
                     const chavesParaRemover = Object.keys(this.data.registros).filter(chave => chave.startsWith(`${id}_`));
@@ -2035,11 +2424,12 @@
                 let horasExtrasNormais = 0; // 50%
                 let horasExtrasFeriado = 0; // 100%
                 let horasExtrasDomingo = 0; // 100%
+                let horasExtrasFolga = 0; // 100%
                 
                 for (let d = 1; d <= diasNoMes; d++) {
                     const dataObj = new Date(this.ui.anoAtual, this.ui.mesAtual, d);
                     const reg = registrosMes[d] || {};
-                    const calculo = this.calcularDiaMelhorado(reg, func.jornada, dataObj);
+                    const calculo = this.calcularDiaComExpediente(reg, func.jornada, dataObj);
                     
                     if (calculo.saldo > 0) {
                         const y = dataObj.getFullYear();
@@ -2051,8 +2441,8 @@
                             horasExtrasFeriado += calculo.saldo;
                         } else if (calculo.isDomingo) {
                             horasExtrasDomingo += calculo.saldo;
-                        } else if (calculo.isSabado && dataObj.getHours() >= 13) {
-                            horasExtrasNormais += calculo.saldo;
+                        } else if (calculo.isFolga) {
+                            horasExtrasFolga += calculo.saldo;
                         } else {
                             horasExtrasNormais += calculo.saldo;
                         }
@@ -2063,7 +2453,8 @@
                     normais: horasExtrasNormais,
                     feriado: horasExtrasFeriado,
                     domingo: horasExtrasDomingo,
-                    total: horasExtrasNormais + horasExtrasFeriado + horasExtrasDomingo
+                    folga: horasExtrasFolga,
+                    total: horasExtrasNormais + horasExtrasFeriado + horasExtrasDomingo + horasExtrasFolga
                 };
             },
 
@@ -2222,6 +2613,11 @@
                 App.atualizarResumoSaldos();
             }
             
+            // Atualiza expediente se navegar para a seção
+            if (sectionId === 'expediente') {
+                App.renderExpediente();
+            }
+            
             // Verifica estados vazios
             App.checkEmptyStates();
         }
@@ -2245,6 +2641,8 @@
             const func = App.getFuncionarioAtual();
             if (func) {
                 showToast(`Perfil alterado para ${func.nome}`, 'success');
+                // Atualiza a exibição do banco de horas
+                App.atualizarExibicaoBancoHoras();
             }
         }
 
@@ -2293,6 +2691,146 @@
         
         function fecharModalPeriodoConsolidado() {
             document.getElementById('modalPeriodoConsolidado').classList.remove('active');
+        }
+
+        // Funções para Expediente
+        function abrirModalExpediente() {
+            const func = App.getFuncionarioAtual();
+            if (!func) {
+                showToast('Selecione um funcionário primeiro', 'error');
+                return;
+            }
+            
+            const expediente = App.getExpedienteFuncionario();
+            const content = document.getElementById('expedienteContent');
+            
+            let html = `
+                <h3 style="margin-bottom: 20px;">Configurar Expediente para ${func.nome}</h3>
+                <p style="margin-bottom: 20px; color: #666;">Configure os horários de trabalho para cada dia da semana.</p>
+                
+                <table class="table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Dia</th>
+                            <th>Trabalha?</th>
+                            <th>Entrada 1</th>
+                            <th>Saída 1</th>
+                            <th>Entrada 2</th>
+                            <th>Saída 2</th>
+                            <th>Jornada (h)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            const dias = [
+                { chave: 'segunda', nome: 'Segunda' },
+                { chave: 'terca', nome: 'Terça' },
+                { chave: 'quarta', nome: 'Quarta' },
+                { chave: 'quinta', nome: 'Quinta' },
+                { chave: 'sexta', nome: 'Sexta' },
+                { chave: 'sabado', nome: 'Sábado' },
+                { chave: 'domingo', nome: 'Domingo' }
+            ];
+            
+            dias.forEach(dia => {
+                const config = expediente[dia.chave];
+                html += `
+                    <tr>
+                        <td><strong>${dia.nome}</strong></td>
+                        <td>
+                            <input type="checkbox" id="exp_${dia.chave}_trab" ${config.trab ? 'checked' : ''} 
+                                   onchange="atualizarJornadaExpediente('${dia.chave}')">
+                        </td>
+                        <td><input type="time" id="exp_${dia.chave}_e1" value="${config.e1 || ''}" class="form-control" style="margin: 0; padding: 8px;"></td>
+                        <td><input type="time" id="exp_${dia.chave}_s1" value="${config.s1 || ''}" class="form-control" style="margin: 0; padding: 8px;"></td>
+                        <td><input type="time" id="exp_${dia.chave}_e2" value="${config.e2 || ''}" class="form-control" style="margin: 0; padding: 8px;"></td>
+                        <td><input type="time" id="exp_${dia.chave}_s2" value="${config.s2 || ''}" class="form-control" style="margin: 0; padding: 8px;"></td>
+                        <td><input type="number" id="exp_${dia.chave}_jornada" value="${config.jornada}" min="0" max="24" step="0.5" class="form-control" style="margin: 0; padding: 8px;"></td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                    </tbody>
+                </table>
+                <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                    <p><strong>Observações:</strong></p>
+                    <ul style="margin-top: 10px; color: #666; padding-left: 20px;">
+                        <li>Para sábado, defina a jornada normalmente (ex: 4h)</li>
+                        <li>Horas trabalhadas além da jornada configurada serão consideradas extras</li>
+                        <li>Domingo sempre será 100% extra se trabalhado</li>
+                        <li>Para dias não trabalhados, marque "Trabalha?" como não</li>
+                    </ul>
+                </div>
+            `;
+            
+            content.innerHTML = html;
+            document.getElementById('modalConfigExpediente').classList.add('active');
+        }
+
+        function fecharModalExpediente() {
+            document.getElementById('modalConfigExpediente').classList.remove('active');
+        }
+
+        function atualizarJornadaExpediente(diaChave) {
+            // Função para recalcular jornada com base nos horários
+            const e1 = document.getElementById(`exp_${diaChave}_e1`).value;
+            const s1 = document.getElementById(`exp_${diaChave}_s1`).value;
+            const e2 = document.getElementById(`exp_${diaChave}_e2`).value;
+            const s2 = document.getElementById(`exp_${diaChave}_s2`).value;
+            
+            let jornada = 0;
+            
+            if (e1 && s1) {
+                const minutosE1 = App.timeToMin(e1);
+                const minutosS1 = App.timeToMin(s1);
+                if (minutosS1 > minutosE1) {
+                    jornada += (minutosS1 - minutosE1) / 60;
+                }
+            }
+            
+            if (e2 && s2) {
+                const minutosE2 = App.timeToMin(e2);
+                const minutosS2 = App.timeToMin(s2);
+                if (minutosS2 > minutosE2) {
+                    jornada += (minutosS2 - minutosE2) / 60;
+                }
+            }
+            
+            // Arredonda para 0.5
+            jornada = Math.round(jornada * 2) / 2;
+            
+            document.getElementById(`exp_${diaChave}_jornada`).value = jornada;
+        }
+
+        function salvarExpediente() {
+            const func = App.getFuncionarioAtual();
+            if (!func) return;
+            
+            const expediente = {};
+            const dias = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
+            
+            dias.forEach(dia => {
+                const trab = document.getElementById(`exp_${dia}_trab`).checked;
+                const e1 = document.getElementById(`exp_${dia}_e1`).value || null;
+                const s1 = document.getElementById(`exp_${dia}_s1`).value || null;
+                const e2 = document.getElementById(`exp_${dia}_e2`).value || null;
+                const s2 = document.getElementById(`exp_${dia}_s2`).value || null;
+                const jornada = parseFloat(document.getElementById(`exp_${dia}_jornada`).value) || 0;
+                
+                expediente[dia] = {
+                    trab: trab,
+                    e1: e1,
+                    s1: s1,
+                    e2: e2,
+                    s2: s2,
+                    jornada: jornada
+                };
+            });
+            
+            App.salvarExpedienteFuncionario(func.id, expediente);
+            fecharModalExpediente();
         }
 
         function atualizarSaldoBaixa() {
@@ -3209,6 +3747,7 @@
                 ['Horas Extras Normais', '50%', App.minToDecimal(horasExtras.normais), 'A definir', 'A calcular'],
                 ['Horas Extras em Feriados', '100%', App.minToDecimal(horasExtras.feriado), 'A definir', 'A calcular'],
                 ['Horas Extras em Domingos', '100%', App.minToDecimal(horasExtras.domingo), 'A definir', 'A calcular'],
+                ['Horas Extras em Folgas', '100%', App.minToDecimal(horasExtras.folga), 'A definir', 'A calcular'],
                 ['TOTAL GERAL', '', App.minToDecimal(horasExtras.total), '', '']
             ];
 
@@ -3241,7 +3780,7 @@
             const observacoes = [
                 "1. Este documento tem validade legal para fins de pagamento.",
                 "2. Os valores serão calculados conforme contrato de trabalho.",
-                "3. Horas extras em feriados e domingos têm acréscimo de 100%.",
+                "3. Horas extras em feriados, domingos e folgas têm acréscimo de 100%.",
                 "4. Horas extras normais têm acréscimo de 50%.",
                 "5. Para pagamento, apresentar este recibo ao departamento financeiro."
             ];
@@ -3355,16 +3894,17 @@
                 const diaNome = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][diaSemana];
                 const reg = registrosMes[d] || {};
                 
-                const calc = App.calcularDiaMelhorado(reg, func.jornada, dataObj);
+                const calc = App.calcularDiaComExpediente(reg, func.jornada, dataObj);
                 
                 const y = dataObj.getFullYear();
                 const m = (dataObj.getMonth() + 1).toString().padStart(2, '0');
                 const dd = d.toString().padStart(2, '0');
                 const dataFormatada = `${y}-${m}-${dd}`;
                 const isFeriado = App.isFeriado(dataFormatada);
+                const isFolga = App.isFolga(dataFormatada);
                 const isAtestadoDay = calc.isAtestadoDay;
 
-                if (calc.teveBatida || isAtestadoDay || (!isFeriado && diaSemana !== 0)) {
+                if (calc.teveBatida || isAtestadoDay || (!isFeriado && !isFolga && diaSemana !== 0)) {
                     totalTrabalhado += calc.trabalhado;
                     totalSaldo += calc.saldo;
                 }
@@ -3373,10 +3913,20 @@
                 let fillColor = [255, 255, 255];
                 let diaComplemento = '';
 
-                if(isFeriado || diaSemana === 0) {
-                    fillColor = [255, 234, 234];
-                    textColor = [150, 0, 0];
-                    diaComplemento = isFeriado ? ' (Fer)' : ' (Dom)';
+                if(isFeriado || diaSemana === 0 || isFolga) {
+                    if (isFeriado) {
+                        fillColor = [255, 234, 234];
+                        textColor = [150, 0, 0];
+                        diaComplemento = ' (Fer)';
+                    } else if (diaSemana === 0) {
+                        fillColor = [255, 234, 234];
+                        textColor = [150, 0, 0];
+                        diaComplemento = ' (Dom)';
+                    } else if (isFolga) {
+                        fillColor = [255, 248, 225];
+                        textColor = [200, 100, 0];
+                        diaComplemento = ' (Folga)';
+                    }
                 }
                 
                 if (isAtestadoDay) {
@@ -3475,7 +4025,7 @@
             const registrosMes = App.data.registros[key] || {};
             const diasNoMes = new Date(App.ui.anoAtual, App.ui.mesAtual + 1, 0).getDate();
             
-            let csv = "Data;Dia da Semana;Entrada 1;Saida 1;Entrada 2;Saida 2;Total Horas;Saldo\n";
+            let csv = "Data;Dia da Semana;Entrada 1;Saida 1;Entrada 2;Saida 2;Total Horas;Saldo;Observação\n";
             
             for(let d=1; d<=diasNoMes; d++) {
                 const r = registrosMes[d] || {};
@@ -3483,9 +4033,9 @@
                 const data = `${d}/${App.ui.mesAtual+1}/${App.ui.anoAtual}`;
                 const diaSemana = dataObj.toLocaleDateString('pt-BR', {weekday: 'short'});
                 
-                const calc = App.calcularDiaMelhorado(r, func.jornada, dataObj);
+                const calc = App.calcularDiaComExpediente(r, func.jornada, dataObj);
                 
-                csv += `${data};${diaSemana};${r.e1||''};${r.s1||''};${r.e2||''};${r.s2||''};${App.minToTime(calc.trabalhado)};${App.minToTime(calc.saldo)}\n`;
+                csv += `${data};${diaSemana};${r.e1||''};${r.s1||''};${r.e2||''};${r.s2||''};${App.minToTime(calc.trabalhado)};${App.minToTime(calc.saldo)};${calc.observacao || ''}\n`;
             }
             
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
