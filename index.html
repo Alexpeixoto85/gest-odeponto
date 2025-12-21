@@ -154,6 +154,10 @@
         .backup-modal p { color: #666; margin-bottom: 25px; line-height: 1.6; }
         .backup-buttons { display: flex; gap: 15px; justify-content: center; }
 
+        /* Modal de Período */
+        .periodo-modal { background: white; border-radius: 20px; width: 100%; max-width: 500px; padding: 30px; position: relative; }
+        .periodo-modal h3 { color: var(--primary-color); margin-bottom: 20px; text-align: center; }
+
         /* Empty State */
         .empty-state { text-align: center; padding: 60px 20px; color: #666; }
         .empty-state i { font-size: 60px; color: #ddd; margin-bottom: 20px; }
@@ -238,6 +242,51 @@
             <div class="backup-buttons">
                 <button class="btn btn-success" onclick="confirmarBaixaBanco()"><i class="fas fa-check"></i> Confirmar Baixa</button>
                 <button class="btn btn-warning" onclick="cancelarBaixaBanco()"><i class="fas fa-times"></i> Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Relatório Consolidado por Período -->
+    <div id="modalPeriodoConsolidado" class="modal-overlay" style="z-index: 2000;">
+        <div class="periodo-modal">
+            <button class="modal-close" onclick="fecharModalPeriodoConsolidado()">&times;</button>
+            <h3><i class="fas fa-calendar-alt"></i> Relatório Consolidado por Período</h3>
+            <p style="margin-bottom: 20px; color: #666;">Selecione o período para gerar o relatório consolidado de saldo de horas.</p>
+            
+            <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                <div style="flex: 1;">
+                    <label>Data Inicial</label>
+                    <input type="date" id="periodoDataInicial" class="form-control">
+                </div>
+                <div style="flex: 1;">
+                    <label>Data Final</label>
+                    <input type="date" id="periodoDataFinal" class="form-control">
+                </div>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label>Funcionário (opcional)</label>
+                <select id="periodoFuncionario" class="form-control">
+                    <option value="todos">Todos os Funcionários</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label>Tipo de Relatório</label>
+                <select id="periodoTipoRelatorio" class="form-control">
+                    <option value="resumido">Resumido (Apenas totais)</option>
+                    <option value="detalhado">Detalhado (Com dias)</option>
+                    <option value="comparativo">Comparativo (Mês a mês)</option>
+                </select>
+            </div>
+            
+            <div class="backup-buttons">
+                <button class="btn btn-primary" onclick="gerarRelatorioConsolidadoPeriodo()">
+                    <i class="fas fa-file-pdf"></i> Gerar Relatório Consolidado
+                </button>
+                <button class="btn btn-warning" onclick="fecharModalPeriodoConsolidado()">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
             </div>
         </div>
     </div>
@@ -344,10 +393,23 @@
                                         <th>Saída 2</th>
                                         <th>Total</th>
                                         <th>Saldo Dia</th>
+                                        <th>Observação</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabelaPontoBody"></tbody>
                             </table>
+                        </div>
+                        
+                        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                            <h4><i class="fas fa-info-circle"></i> Legenda do Saldo:</h4>
+                            <ul style="margin-top: 10px; color: #666; padding-left: 20px;">
+                                <li><span class="saldo-positivo">Verde:</span> Horas extras trabalhadas (saldo positivo)</li>
+                                <li><span class="saldo-negativo">Vermelho:</span> Horas faltantes (saldo negativo)</li>
+                                <li>O saldo já considera a subtração da jornada diária</li>
+                                <li>Domingos/Feriados: 100% hora extra se trabalhado</li>
+                                <li>Sábado após 13:00: hora extra</li>
+                                <li>Saldo acumulado: positivo e negativo se compensam automaticamente</li>
+                            </ul>
                         </div>
                     </div>
                 </section>
@@ -461,7 +523,7 @@
                     <div id="bancohorasContent">
                         <div class="card">
                             <h3><i class="fas fa-chart-line"></i> Histórico do Banco de Horas</h3>
-                            <p style="margin-bottom: 20px; color: #666;">Visualize o saldo acumulado mês a mês. O banco de horas acumula os saldos positivos e negativos de todos os meses.</p>
+                            <p style="margin-bottom: 20px; color: #666;">Visualize o saldo acumulado mês a mês. O banco de horas acumula os saldos positivos e negativos de todos os meses (eles se compensam automaticamente).</p>
                             
                             <div class="table-wrapper">
                                 <table class="table">
@@ -482,8 +544,11 @@
                                 <h4><i class="fas fa-info-circle"></i> Como funciona o Banco de Horas:</h4>
                                 <ul style="margin-top: 10px; color: #666; padding-left: 20px;">
                                     <li>Saldo positivo: horas extras trabalhadas</li>
-                                    <li>Saldo negativo: horas a compensar</li                                    <li>O banco acumula mês a mês automaticamente</li>
+                                    <li>Saldo negativo: horas a compensar</li>
+                                    <li>O banco acumula mês a mês automaticamente</li>
                                     <li>Valores em vermelho indicam débito, verde crédito</li>
+                                    <li><strong>Saldo líquido:</strong> positivo e negativo se compensam automaticamente</li>
+                                    <li><strong>Exemplo:</strong> 30 minutos extra + 30 minutos faltante = saldo zero</li>
                                 </ul>
                             </div>
                         </div>
@@ -527,7 +592,8 @@
                             O sistema identifica dias automaticamente. <br>
                             <strong>Regras aplicadas:</strong><br>
                             - Domingos/Feriados trabalhados = 100% Extra.<br>
-                            - Sábados após 13:00 = Extra.
+                            - Sábados após 13:00 = Extra.<br>
+                            - Cálculo automático: saldo positivo e negativo se compensam
                         </p>
                         
                         <div class="upload-zone" onclick="abrirModalImportacao()">
@@ -596,10 +662,10 @@
                             </button>
                         </div>
                         <div class="card">
-                            <h3><i class="fas fa-calendar-alt"></i> Relatório Mensal Detalhado</h3>
-                            <p style="margin: 10px 0;">Gera relatório com detalhes mês a mês do banco de horas para todos os funcionários.</p>
-                            <button class="btn btn-special" onclick="gerarRelatorioMensalDetalhado()" style="width: 100%; margin-top: 15px;">
-                                <i class="fas fa-download"></i> Baixar Relatório Mensal
+                            <h3><i class="fas fa-calendar-alt"></i> Relatório Consolidado por Período</h3>
+                            <p style="margin: 10px 0;">Gera relatório consolidado de saldo de horas por período personalizado (múltiplos meses).</p>
+                            <button class="btn btn-special" onclick="abrirModalPeriodoConsolidado()" style="width: 100%; margin-top: 15px;">
+                                <i class="fas fa-download"></i> Relatório por Período
                             </button>
                         </div>
                     </div>
@@ -803,6 +869,35 @@
                 
                 // IMPORTANTE: Calcula e atualiza automaticamente o banco de horas para todos os funcionários
                 this.atualizarBancoHorasTodosFuncionarios();
+                
+                // Configurar datas padrão para o modal de período
+                this.configurarDatasPadraoPeriodo();
+            },
+            
+            configurarDatasPadraoPeriodo: function() {
+                const hoje = new Date();
+                const primeiroDiaMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+                const primeiroDiaMesAnterior = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
+                
+                // Formatar para YYYY-MM-DD
+                const formatarData = (data) => {
+                    return data.toISOString().split('T')[0];
+                };
+                
+                document.getElementById('periodoDataInicial').value = formatarData(primeiroDiaMesAnterior);
+                document.getElementById('periodoDataFinal').value = formatarData(hoje);
+                
+                // Preencher select de funcionários
+                this.atualizarSelectFuncionariosPeriodo();
+            },
+            
+            atualizarSelectFuncionariosPeriodo: function() {
+                const select = document.getElementById('periodoFuncionario');
+                select.innerHTML = '<option value="todos">Todos os Funcionários</option>';
+                
+                this.data.funcionarios.forEach(func => {
+                    select.innerHTML += `<option value="${func.id}">${func.nome} (${func.codigo})</option>`;
+                });
             },
 
             // --- Atualiza banco de horas para TODOS os funcionários ---
@@ -997,6 +1092,7 @@
                 };
             },
 
+            // CÁLCULO DO SALDO DO MÊS MELHORADO
             calcularSaldoMes: function(funcId, ano, mes) {
                 const func = this.data.funcionarios.find(f => f.id === funcId);
                 if (!func) return 0;
@@ -1010,12 +1106,97 @@
                 for (let d = 1; d <= diasNoMes; d++) {
                     const dataObj = new Date(ano, mes, d);
                     const reg = registrosMes[d] || {};
-                    const calculo = this.calcularDia(reg, func.jornada, dataObj, funcId);
+                    const calculo = this.calcularDiaMelhorado(reg, func.jornada, dataObj, funcId);
                     
                     saldoMes += calculo.saldo;
                 }
                 
                 return saldoMes;
+            },
+
+            // CÁLCULO DO DIA MELHORADO - LÓGICA DE SUBTRAÇÃO DE HORAS FALTANTES
+            calcularDiaMelhorado: function(reg, jornadaHoras, dataObj, funcId = null) {
+                const y = dataObj.getFullYear();
+                const m = (dataObj.getMonth() + 1).toString().padStart(2, '0');
+                const d = dataObj.getDate().toString().padStart(2, '0');
+                const dataFormatada = `${y}-${m}-${d}`;
+                
+                const diaSemana = dataObj.getDay(); 
+                const isDomingo = diaSemana === 0;
+                const isSabado = diaSemana === 6;
+                const isFeriado = this.isFeriado(dataFormatada, funcId);
+                const minutosAbonados = this.isAtestado(dataFormatada, funcId); 
+                const isAtestadoDay = minutosAbonados > 0; 
+
+                let trabalhado = 0;
+                if (reg) {
+                    if (reg.e1 && reg.s1) trabalhado += (this.timeToMin(reg.s1) - this.timeToMin(reg.e1));
+                    if (reg.e2 && reg.s2) trabalhado += (this.timeToMin(reg.s2) - this.timeToMin(reg.e2));
+                }
+                
+                const teveBatida = trabalhado > 0;
+                let saldo = 0;
+                let jornadaEfetiva = jornadaHoras * 60;
+                let observacao = '';
+
+                // **LÓGICA MELHORADA DE CÁLCULO DE SALDO**
+                if (isAtestadoDay) {
+                    jornadaEfetiva = minutosAbonados; 
+                    if (!teveBatida) {
+                        trabalhado = minutosAbonados; 
+                        saldo = 0; // Atestado: não gera saldo positivo nem negativo
+                        observacao = 'Atestado';
+                    } else {
+                        saldo = trabalhado - jornadaEfetiva;
+                        observacao = 'Trabalhou com atestado';
+                    }
+                }
+                else if (isDomingo || isFeriado) {
+                    // Para domingos e feriados, toda hora trabalhada é extra (100%)
+                    jornadaEfetiva = 0;
+                    if (teveBatida) {
+                        saldo = trabalhado; // 100% extra
+                        observacao = isDomingo ? 'Domingo' : 'Feriado';
+                    } else {
+                        observacao = isDomingo ? 'Domingo' : 'Feriado';
+                    }
+                }
+                else if (isSabado) {
+                    const jornadaSabado = 4 * 60; // 4 horas para sábado
+                    if(teveBatida) {
+                        // Para sábados, calcula horas extras a partir das 13:00
+                        const horasExtrasSabado = this.calcularHorasExtrasSabado(reg, jornadaSabado);
+                        saldo = horasExtrasSabado;
+                        observacao = saldo > 0 ? 'Sábado (extra)' : 'Sábado';
+                    } else {
+                        // Se não trabalhou no sábado, não gera saldo negativo
+                        saldo = 0;
+                        observacao = 'Sábado';
+                    }
+                }
+                else {
+                    // Dias normais: horas extras são o que excede a jornada
+                    if (teveBatida) { 
+                        saldo = trabalhado - jornadaEfetiva;
+                        observacao = saldo > 0 ? 'Extra' : (saldo < 0 ? 'Falta' : 'Normal');
+                    } else {
+                        // Se não trabalhou em dia útil, gera saldo negativo
+                        saldo = -jornadaEfetiva;
+                        observacao = 'Falta';
+                    }
+                }
+
+                return {
+                    trabalhado: trabalhado,
+                    saldo: saldo, // Este é o saldo líquido do dia (pode ser positivo ou negativo)
+                    teveBatida: teveBatida,
+                    isSpecial: isDomingo || isFeriado,
+                    isAtestadoDay: isAtestadoDay,
+                    isDomingo: isDomingo,
+                    isFeriado: isFeriado,
+                    isSabado: isSabado,
+                    observacao: observacao
+                };
             },
 
             atualizarBancoHoras: function(funcId = null) {
@@ -1243,6 +1424,7 @@
                 this.saveToStorage();
                 this.checkEmptyStates();
                 this.atualizarResumoSaldos();
+                this.atualizarSelectFuncionariosPeriodo();
                 // Atualiza o banco de horas para o novo funcionário
                 if (bancoHorasAtivo) {
                     this.calcularBancoHorasFuncionario(id, true);
@@ -1265,6 +1447,7 @@
                     this.renderListaFuncionarios();
                     this.renderBancoHoras();
                     this.atualizarResumoSaldos();
+                    this.atualizarSelectFuncionariosPeriodo();
                     showToast(`Banco de horas ${func.bancoHorasAtivo ? 'ativado' : 'desativado'} para ${func.nome}`, 'success');
                 }
             },
@@ -1314,73 +1497,6 @@
                     }
                 }
                 return 0; 
-            },
-
-            calcularDia: function(reg, jornadaHoras, dataObj, funcId = null) {
-                const y = dataObj.getFullYear();
-                const m = (dataObj.getMonth() + 1).toString().padStart(2, '0');
-                const d = dataObj.getDate().toString().padStart(2, '0');
-                const dataFormatada = `${y}-${m}-${d}`;
-                
-                const diaSemana = dataObj.getDay(); 
-                const isDomingo = diaSemana === 0;
-                const isSabado = diaSemana === 6;
-                const isFeriado = this.isFeriado(dataFormatada, funcId);
-                const minutosAbonados = this.isAtestado(dataFormatada, funcId); 
-                const isAtestadoDay = minutosAbonados > 0; 
-
-                let trabalhado = 0;
-                if (reg) {
-                    if (reg.e1 && reg.s1) trabalhado += (this.timeToMin(reg.s1) - this.timeToMin(reg.e1));
-                    if (reg.e2 && reg.s2) trabalhado += (this.timeToMin(reg.s2) - this.timeToMin(reg.e2));
-                }
-                
-                const teveBatida = trabalhado > 0;
-                let saldo = 0;
-                let jornadaEfetiva = jornadaHoras * 60;
-
-                // ** CORREÇÃO CRÍTICA: AS HORAS EXTRAS DEVEM SER CONTABILIZADAS NO BANCO DE HORAS **
-                if (isAtestadoDay) {
-                    jornadaEfetiva = minutosAbonados; 
-                    if (!teveBatida) {
-                        trabalhado = minutosAbonados; 
-                        saldo = 0; 
-                    } else {
-                        saldo = trabalhado - jornadaEfetiva;
-                    }
-                }
-                else if (isDomingo || isFeriado) {
-                    // Para domingos e feriados, toda hora trabalhada é extra (100%)
-                    jornadaEfetiva = 0;
-                    if (teveBatida) {
-                        saldo = trabalhado; // 100% extra
-                    }
-                }
-                else if (isSabado) {
-                    const jornadaSabado = 4 * 60; // 4 horas para sábado
-                    if(teveBatida) {
-                        // Para sábados, calcula horas extras a partir das 13:00
-                        const horasExtrasSabado = this.calcularHorasExtrasSabado(reg, jornadaSabado);
-                        saldo = horasExtrasSabado;
-                    }
-                }
-                else {
-                    // Dias normais: horas extras são o que excede a jornada
-                    if (teveBatida) { 
-                        saldo = trabalhado - jornadaEfetiva;
-                    }
-                }
-
-                return {
-                    trabalhado: trabalhado,
-                    saldo: saldo,
-                    teveBatida: teveBatida,
-                    isSpecial: isDomingo || isFeriado,
-                    isAtestadoDay: isAtestadoDay,
-                    isDomingo: isDomingo,
-                    isFeriado: isFeriado,
-                    isSabado: isSabado
-                };
             },
 
             // Nova função para calcular horas extras em sábados a partir das 13:00
@@ -1503,7 +1619,7 @@
                     const isFeriado = this.isFeriado(dataFormatada);
 
                     const reg = registrosMes[d] || {};
-                    const calculo = this.calcularDia(reg, func.jornada, dataObj);
+                    const calculo = this.calcularDiaMelhorado(reg, func.jornada, dataObj);
                     const isAtestadoDay = calculo.isAtestadoDay;
 
                     const diaNome = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][diaSemana];
@@ -1525,6 +1641,7 @@
                             <td><input type="time" class="time-input" onchange="App.updatePonto(${d}, 's2', this.value)" value="${reg.s2 || ''}"></td>
                             <td class="col-total">${this.minToTime(calculo.trabalhado)}</td>
                             <td class="col-saldo ${calculo.saldo >= 0 ? 'saldo-positivo' : 'saldo-negativo'}">${this.minToTime(calculo.saldo)}</td>
+                            <td style="font-size: 12px; color: #666;">${calculo.observacao || ''}</td>
                         </tr>
                     `;
                     tbody.insertAdjacentHTML('beforeend', html);
@@ -1554,15 +1671,19 @@
                 const key = this.getKeyRegistro();
                 const reg = this.data.registros[key][dia] || {};
                 
-                const calculo = this.calcularDia(reg, func.jornada, dataObj);
+                const calculo = this.calcularDiaMelhorado(reg, func.jornada, dataObj);
                 
                 const colTotal = row.querySelector('.col-total');
                 const colSaldo = row.querySelector('.col-saldo');
+                const colObservacao = row.querySelector('td:last-child');
                 
                 if(colTotal) colTotal.textContent = this.minToTime(calculo.trabalhado);
                 if(colSaldo) {
                     colSaldo.textContent = this.minToTime(calculo.saldo);
                     colSaldo.className = `col-saldo ${calculo.saldo >= 0 ? 'saldo-positivo' : 'saldo-negativo'}`;
+                }
+                if(colObservacao) {
+                    colObservacao.textContent = calculo.observacao || '';
                 }
             },
 
@@ -1580,7 +1701,7 @@
                 for (let d = 1; d <= diasNoMes; d++) {
                     const dataObj = new Date(this.ui.anoAtual, this.ui.mesAtual, d);
                     const reg = registrosMes[d] || {};
-                    const calculo = this.calcularDia(reg, func.jornada, dataObj);
+                    const calculo = this.calcularDiaMelhorado(reg, func.jornada, dataObj);
 
                     const diaSemana = dataObj.getDay();
                     const isDomingo = diaSemana === 0;
@@ -1891,6 +2012,7 @@
                     this.saveToStorage();
                     this.renderAll();
                     this.atualizarResumoSaldos();
+                    this.atualizarSelectFuncionariosPeriodo();
                     showToast('Funcionário removido', 'success');
                 }
             },
@@ -1917,7 +2039,7 @@
                 for (let d = 1; d <= diasNoMes; d++) {
                     const dataObj = new Date(this.ui.anoAtual, this.ui.mesAtual, d);
                     const reg = registrosMes[d] || {};
-                    const calculo = this.calcularDia(reg, func.jornada, dataObj);
+                    const calculo = this.calcularDiaMelhorado(reg, func.jornada, dataObj);
                     
                     if (calculo.saldo > 0) {
                         const y = dataObj.getFullYear();
@@ -1965,15 +2087,110 @@
             },
 
             // --- Obter saldo total por período ---
-            getSaldoTotalPorPeriodo: function(ano, mes) {
-                let saldoTotal = 0;
+            getSaldoTotalPorPeriodo: function(funcId, dataInicial, dataFinal) {
+                if (!funcId) return 0;
                 
-                this.data.funcionarios.forEach(func => {
-                    const saldoMes = this.calcularSaldoMes(func.id, ano, mes);
-                    saldoTotal += saldoMes;
-                });
+                const dataIni = new Date(dataInicial);
+                const dataFim = new Date(dataFinal);
+                
+                let saldoTotal = 0;
+                const chavesRegistros = Object.keys(this.data.registros);
+                
+                for (const chave of chavesRegistros) {
+                    if (chave.startsWith(`${funcId}_`)) {
+                        const [_, ano, mes] = chave.split('_');
+                        const dataMes = new Date(parseInt(ano), parseInt(mes), 1);
+                        
+                        // Verifica se o mês está dentro do período
+                        if (dataMes >= dataIni && dataMes <= dataFim) {
+                            const saldoMes = this.calcularSaldoMes(funcId, parseInt(ano), parseInt(mes));
+                            saldoTotal += saldoMes;
+                        }
+                    }
+                }
                 
                 return saldoTotal;
+            },
+
+            // --- Obter detalhes do período para relatório consolidado ---
+            getDetalhesPeriodoConsolidado: function(dataInicial, dataFinal, funcId = null) {
+                const dataIni = new Date(dataInicial);
+                const dataFim = new Date(dataFinal);
+                
+                const resultado = {
+                    funcionarios: [],
+                    periodo: {
+                        dataInicial: dataIni.toLocaleDateString('pt-BR'),
+                        dataFinal: dataFim.toLocaleDateString('pt-BR'),
+                        meses: []
+                    },
+                    totais: {
+                        saldoTotal: 0,
+                        horasExtras: 0,
+                        horasFaltantes: 0,
+                        funcionariosAnalisados: 0
+                    }
+                };
+                
+                // Determinar quais funcionários analisar
+                const funcionariosAnalisar = funcId && funcId !== 'todos' 
+                    ? this.data.funcionarios.filter(f => f.id === funcId)
+                    : this.data.funcionarios;
+                
+                resultado.totais.funcionariosAnalisados = funcionariosAnalisar.length;
+                
+                // Para cada funcionário, calcular o saldo no período
+                funcionariosAnalisar.forEach(func => {
+                    const saldoPeriodo = this.getSaldoTotalPorPeriodo(func.id, dataInicial, dataFinal);
+                    
+                    // Determinar status
+                    let status = 'NEUTRO';
+                    let statusCor = '#666';
+                    if (saldoPeriodo > 0) {
+                        status = 'CRÉDITO';
+                        statusCor = '#4cc9f0';
+                        resultado.totais.horasExtras += saldoPeriodo;
+                    } else if (saldoPeriodo < 0) {
+                        status = 'DÉBITO';
+                        statusCor = '#f94144';
+                        resultado.totais.horasFaltantes += Math.abs(saldoPeriodo);
+                    }
+                    
+                    resultado.totais.saldoTotal += saldoPeriodo;
+                    
+                    resultado.funcionarios.push({
+                        id: func.id,
+                        nome: func.nome,
+                        cargo: func.cargo,
+                        codigo: func.codigo,
+                        saldoPeriodo: saldoPeriodo,
+                        saldoFormatado: this.minToTime(saldoPeriodo),
+                        status: status,
+                        statusCor: statusCor,
+                        bancoAtivo: func.bancoHorasAtivo
+                    });
+                });
+                
+                // Calcular meses incluídos no período
+                let dataAtual = new Date(dataIni);
+                dataAtual.setDate(1); // Primeiro dia do mês
+                
+                while (dataAtual <= dataFim) {
+                    const ano = dataAtual.getFullYear();
+                    const mes = dataAtual.getMonth();
+                    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                    
+                    resultado.periodo.meses.push({
+                        ano: ano,
+                        mes: mes,
+                        mesNome: meses[mes]
+                    });
+                    
+                    // Avançar para o próximo mês
+                    dataAtual.setMonth(dataAtual.getMonth() + 1);
+                }
+                
+                return resultado;
             }
         };
 
@@ -2068,6 +2285,14 @@
             }
             
             document.getElementById('modalBaixaBanco').classList.add('active');
+        }
+
+        function abrirModalPeriodoConsolidado() {
+            document.getElementById('modalPeriodoConsolidado').classList.add('active');
+        }
+        
+        function fecharModalPeriodoConsolidado() {
+            document.getElementById('modalPeriodoConsolidado').classList.remove('active');
         }
 
         function atualizarSaldoBaixa() {
@@ -2301,7 +2526,8 @@
                 "2. Saldo negativo indica horas a compensar (débito).",
                 "3. Este relatório reflete o banco de horas acumulado de todos os meses.",
                 "4. O banco de horas é atualizado automaticamente a cada alteração no ponto.",
-                "5. Quando o Banco de Horas está inativo, o saldo é zerado e não há acúmulo."
+                "5. Quando o Banco de Horas está inativo, o saldo é zerado e não há acúmulo.",
+                "6. Saldo líquido: positivo e negativo se compensam automaticamente (ex: 30min extra + 30min faltante = 0)"
             ];
             
             observacoes.forEach((obs, index) => {
@@ -2490,7 +2716,8 @@
                 "• Crédito: Funcionário tem horas extras a receber",
                 "• Débito: Funcionário tem horas a compensar",
                 "• O banco de horas acumula automaticamente os saldos mensais",
-                "• Quando o banco está inativo, o saldo é zerado e não há acúmulo"
+                "• Quando o banco está inativo, o saldo é zerado e não há acúmulo",
+                "• Saldo líquido: positivo e negativo se compensam (ex: 30min extra + 30min faltante = 0)"
             ];
             
             legendas.forEach((legenda, index) => {
@@ -2651,6 +2878,264 @@
             const date = new Date().toISOString().slice(0, 10);
             doc.save(`Relatorio_Mensal_Detalhado_${date}.pdf`);
             showToast('Relatório mensal detalhado gerado com sucesso!', 'success');
+        }
+
+        // ==========================================
+        // NOVA FUNÇÃO: Relatório Consolidado por Período
+        // ==========================================
+
+        function gerarRelatorioConsolidadoPeriodo() {
+            const dataInicial = document.getElementById('periodoDataInicial').value;
+            const dataFinal = document.getElementById('periodoDataFinal').value;
+            const funcId = document.getElementById('periodoFuncionario').value;
+            const tipoRelatorio = document.getElementById('periodoTipoRelatorio').value;
+            
+            if (!dataInicial || !dataFinal) {
+                showToast('Selecione o período corretamente', 'error');
+                return;
+            }
+            
+            if (new Date(dataInicial) > new Date(dataFinal)) {
+                showToast('A data inicial não pode ser maior que a data final', 'error');
+                return;
+            }
+            
+            // Obter dados consolidados
+            const dados = App.getDetalhesPeriodoConsolidado(dataInicial, dataFinal, funcId);
+            
+            if (dados.funcionarios.length === 0) {
+                showToast('Nenhum dado encontrado para o período selecionado', 'warning');
+                return;
+            }
+            
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            
+            const azulPrincipal = [67, 97, 238];
+            
+            // Cabeçalho
+            doc.setFillColor(...azulPrincipal);
+            doc.rect(0, 0, 210, 40, 'F');
+            
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(22);
+            doc.setFont("helvetica", "bold");
+            doc.text("RELATÓRIO CONSOLIDADO POR PERÍODO", 105, 18, { align: "center" });
+            
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text(`${App.data.empresa.nome} | CNPJ: ${App.data.empresa.cnpj}`, 105, 26, { align: "center" });
+            doc.text(`Período: ${dados.periodo.dataInicial} a ${dados.periodo.dataFinal} | Data: ${new Date().toLocaleDateString('pt-BR')}`, 105, 32, { align: "center" });
+            
+            let yPos = 50;
+            
+            // Resumo do Período
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(50, 50, 50);
+            doc.text("RESUMO DO PERÍODO", 20, yPos);
+            
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Período Analisado: ${dados.periodo.dataInicial} a ${dados.periodo.dataFinal}`, 20, yPos + 8);
+            doc.text(`Meses Incluídos: ${dados.periodo.meses.length} meses`, 20, yPos + 16);
+            doc.text(`Funcionários Analisados: ${dados.totais.funcionariosAnalisados}`, 20, yPos + 24);
+            doc.text(`Horas Extras Totais: ${App.minToTime(dados.totais.horasExtras)}`, 20, yPos + 32);
+            doc.text(`Horas Faltantes Totais: ${App.minToTime(dados.totais.horasFaltantes)}`, 20, yPos + 40);
+            
+            const saldoCor = dados.totais.saldoTotal >= 0 ? [0, 150, 0] : [200, 50, 50];
+            doc.setTextColor(...saldoCor);
+            doc.setFont("helvetica", "bold");
+            doc.text(`SALDO CONSIDERADO NO PERÍODO: ${App.minToTime(dados.totais.saldoTotal)}`, 20, yPos + 48);
+            
+            doc.setTextColor(50, 50, 50);
+            yPos += 60;
+            
+            // Tabela de Funcionários
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "bold");
+            doc.text("DETALHAMENTO POR FUNCIONÁRIO", 20, yPos);
+            
+            const tableData = [];
+            tableData.push([
+                { content: 'Funcionário', styles: { fontStyle: 'bold' } },
+                { content: 'Cargo', styles: { fontStyle: 'bold' } },
+                { content: 'Matrícula', styles: { fontStyle: 'bold' } },
+                { content: 'Saldo no Período', styles: { fontStyle: 'bold' } },
+                { content: 'Status', styles: { fontStyle: 'bold' } },
+                { content: 'Banco Ativo', styles: { fontStyle: 'bold' } }
+            ]);
+            
+            dados.funcionarios.forEach(func => {
+                tableData.push([
+                    func.nome,
+                    func.cargo,
+                    func.codigo,
+                    { content: func.saldoFormatado, styles: { textColor: func.saldoPeriodo >= 0 ? [0, 150, 0] : [200, 50, 50] } },
+                    func.status,
+                    func.bancoAtivo ? 'Sim' : 'Não'
+                ]);
+            });
+            
+            // Adicionar linha de total
+            tableData.push([
+                { content: 'TOTAL CONSIDERADO NO PERÍODO', colSpan: 4, styles: { fontStyle: 'bold', halign: 'right' } },
+                { content: App.minToTime(dados.totais.saldoTotal), styles: { fontStyle: 'bold', textColor: dados.totais.saldoTotal >= 0 ? [0, 150, 0] : [200, 50, 50] } },
+                { content: '', styles: { fontStyle: 'bold' } }
+            ]);
+            
+            doc.autoTable({
+                startY: yPos + 5,
+                head: [tableData[0]],
+                body: tableData.slice(1, -1),
+                foot: [tableData[tableData.length - 1]],
+                theme: 'grid',
+                headStyles: { fillColor: azulPrincipal, textColor: 255, fontStyle: 'bold', halign: 'center' },
+                footStyles: { fillColor: [240, 240, 240], textColor: [50, 50, 50], fontStyle: 'bold' },
+                bodyStyles: { halign: 'center' },
+                alternateRowStyles: { fillColor: [248, 249, 252] },
+                styles: { fontSize: 9, cellPadding: 5 },
+                columnStyles: {
+                    0: { cellWidth: 40 },
+                    1: { cellWidth: 35 },
+                    2: { cellWidth: 25 },
+                    3: { cellWidth: 40 },
+                    4: { cellWidth: 25 },
+                    5: { cellWidth: 25 }
+                }
+            });
+            
+            yPos = doc.lastAutoTable.finalY + 15;
+            
+            // Detalhes dos meses incluídos (se for relatório detalhado)
+            if (tipoRelatorio === 'detalhado' || tipoRelatorio === 'comparativo') {
+                if (yPos > 200) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+                
+                doc.setFontSize(12);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(50, 50, 50);
+                doc.text("MESES INCLUÍDOS NO PERÍODO", 20, yPos);
+                
+                doc.setFontSize(10);
+                doc.setFont("helvetica", "normal");
+                
+                let mesesTexto = '';
+                dados.periodo.meses.forEach((mes, index) => {
+                    mesesTexto += `${mes.mesNome}/${mes.ano}`;
+                    if (index < dados.periodo.meses.length - 1) {
+                        mesesTexto += ', ';
+                    }
+                    if ((index + 1) % 3 === 0) {
+                        mesesTexto += '\n';
+                    }
+                });
+                
+                const mesesLines = mesesTexto.split('\n');
+                mesesLines.forEach((line, index) => {
+                    doc.text(line, 20, yPos + 10 + (index * 5));
+                });
+                
+                yPos += 20 + (mesesLines.length * 5);
+            }
+            
+            // Se for relatório comparativo, adicionar análise por mês
+            if (tipoRelatorio === 'comparativo' && dados.funcionarios.length > 0) {
+                if (yPos > 180) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+                
+                doc.setFontSize(12);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(50, 50, 50);
+                doc.text("ANÁLISE COMPARATIVA MENSAL", 20, yPos);
+                
+                yPos += 10;
+                
+                // Para cada funcionário, mostrar saldo por mês
+                dados.funcionarios.forEach(func => {
+                    if (yPos > 250) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                    
+                    doc.setFontSize(10);
+                    doc.setFont("helvetica", "bold");
+                    doc.text(`${func.nome} - Saldo Total: ${func.saldoFormatado}`, 20, yPos);
+                    
+                    // Obter histórico do funcionário
+                    const historico = App.getHistoricoBancoHorasFuncionario(func.id);
+                    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                    
+                    yPos += 8;
+                    doc.setFont("helvetica", "normal");
+                    
+                    let linhaMeses = '';
+                    historico.forEach((item, index) => {
+                        // Verificar se o mês está dentro do período
+                        const dataItem = new Date(item.ano, item.mes, 1);
+                        const dataIni = new Date(dataInicial);
+                        const dataFim = new Date(dataFinal);
+                        
+                        if (dataItem >= dataIni && dataItem <= dataFim) {
+                            const saldoColor = item.saldoMes >= 0 ? [0, 150, 0] : [200, 50, 50];
+                            linhaMeses += `${meses[item.mes]}/${item.ano}: ${App.minToTime(item.saldoMes)}`;
+                            if (index < historico.length - 1) {
+                                linhaMeses += ' | ';
+                            }
+                        }
+                    });
+                    
+                    const linhas = linhaMeses.split(' | ');
+                    linhas.forEach((linha, index) => {
+                        doc.text(linha, 25, yPos + (index * 5));
+                    });
+                    
+                    yPos += (linhas.length * 5) + 10;
+                });
+            }
+            
+            // Observações
+            if (yPos > 230) {
+                doc.addPage();
+                yPos = 20;
+            }
+            
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(50, 50, 50);
+            doc.text("OBSERVAÇÕES:", 20, yPos);
+            
+            doc.setFont("helvetica", "normal");
+            const observacoes = [
+                "1. Este relatório consolida o saldo de horas no período selecionado.",
+                "2. O saldo considera a diferença entre horas trabalhadas e jornada contratual.",
+                "3. Valores positivos indicam horas extras (crédito).",
+                "4. Valores negativos indicam horas faltantes (débito).",
+                "5. O período inclui todos os meses completos entre as datas selecionadas.",
+                "6. Quando o Banco de Horas está inativo, o saldo é zerado para o período.",
+                "7. Saldo líquido: positivo e negativo se compensam automaticamente."
+            ];
+            
+            observacoes.forEach((obs, index) => {
+                doc.text(obs, 25, yPos + 7 + (index * 5));
+            });
+            
+            // Rodapé
+            doc.setFontSize(8);
+            doc.setTextColor(150, 150, 150);
+            doc.text("Relatório gerado automaticamente por Ponto Enterprise System", 105, 285, { align: "center" });
+            
+            // Salvar
+            const date = new Date().toISOString().slice(0, 10);
+            const nomeArquivo = `Relatorio_Consolidado_${date}_${dataInicial}_a_${dataFinal}.pdf`;
+            doc.save(nomeArquivo);
+            
+            fecharModalPeriodoConsolidado();
+            showToast('Relatório consolidado gerado com sucesso!', 'success');
         }
 
         // --- Funções para Recibo de Horas Extras ---
@@ -2870,7 +3355,7 @@
                 const diaNome = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'][diaSemana];
                 const reg = registrosMes[d] || {};
                 
-                const calc = App.calcularDia(reg, func.jornada, dataObj);
+                const calc = App.calcularDiaMelhorado(reg, func.jornada, dataObj);
                 
                 const y = dataObj.getFullYear();
                 const m = (dataObj.getMonth() + 1).toString().padStart(2, '0');
@@ -2987,7 +3472,7 @@
             }
             
             const key = App.getKeyRegistro();
-            const registrosMes = this.data.registros[key] || {};
+            const registrosMes = App.data.registros[key] || {};
             const diasNoMes = new Date(App.ui.anoAtual, App.ui.mesAtual + 1, 0).getDate();
             
             let csv = "Data;Dia da Semana;Entrada 1;Saida 1;Entrada 2;Saida 2;Total Horas;Saldo\n";
@@ -2998,7 +3483,7 @@
                 const data = `${d}/${App.ui.mesAtual+1}/${App.ui.anoAtual}`;
                 const diaSemana = dataObj.toLocaleDateString('pt-BR', {weekday: 'short'});
                 
-                const calc = App.calcularDia(r, func.jornada, dataObj);
+                const calc = App.calcularDiaMelhorado(r, func.jornada, dataObj);
                 
                 csv += `${data};${diaSemana};${r.e1||''};${r.s1||''};${r.e2||''};${r.s2||''};${App.minToTime(calc.trabalhado)};${App.minToTime(calc.saldo)}\n`;
             }
